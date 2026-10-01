@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Plus, Tag, Package, MapPin, Sparkles, Loader2, BarChart3 } from "lucide-react";
+import { Plus, User, MapPin, FileText, Loader2, BarChart3 } from "lucide-react";
 import { Item, InventoryStats } from "@/types/inventory";
 
 interface SidebarProps {
@@ -8,7 +8,12 @@ interface SidebarProps {
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
   stats: InventoryStats;
-  onAddItem: (item: Omit<Item, "id" | "status" | "borrower_name" | "borrower_contact" | "loaned_at" | "expected_return_date" | "created_at">) => Promise<void>;
+  onAddItem: (item: {
+    category: string;
+    location: string;
+    borrower_name?: string;
+    description?: string;
+  }) => Promise<void>;
   onResetData: () => void;
 }
 
@@ -20,46 +25,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAddItem,
   onResetData,
 }) => {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("카메라/영상");
-  const [code, setCode] = useState(() => "HYD-" + Math.floor(100 + Math.random() * 900));
-  const [location, setLocation] = useState("5F 사운즈 포레스트 인포데스크");
-  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState(selectedCategory === "전체" ? "A2 POP" : selectedCategory);
+  const [borrower, setBorrower] = useState("");
+  const [location, setLocation] = useState("");
+  const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleGenerateCode = () => {
-    const prefixMap: Record<string, string> = {
-      "음향/오디오": "HYD-AU",
-      "카메라/영상": "HYD-CAM",
-      "IT/업무장비": "HYD-IT",
-      "뷰티/스타일링": "HYD-BT",
-      "행사/의전": "HYD-EV",
-      "기타 편의용품": "HYD-ETC",
-    };
-    const prefix = prefixMap[category] || "HYD-GEN";
-    const rand = Math.floor(10 + Math.random() * 90);
-    setCode(`${prefix}-${rand}`);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      alert("물품명을 입력해주세요.");
+    if (!location.trim()) {
+      alert("설치 장소를 입력해주세요.");
       return;
     }
 
     setIsSubmitting(true);
     try {
       await onAddItem({
-        name: name.trim(),
         category,
-        code: code.trim() || "HYD-" + Date.now().toString().slice(-4),
         location: location.trim(),
-        description: description.trim() || null,
+        borrower_name: borrower.trim() || undefined,
+        description: note.trim() || undefined,
       });
-      setName("");
-      setDescription("");
-      handleGenerateCode();
+      // Reset fields
+      setBorrower("");
+      setLocation("");
+      setNote("");
     } catch (err) {
       console.error(err);
       alert("등록에 실패했습니다.");
@@ -72,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-full lg:w-72 bg-[#fdfdfd] border-r border-[#d1d1d1] flex flex-col shrink-0 overflow-hidden h-full">
-      {/* 1. Category Selection Section */}
+      {/* 1. Category Selection Section (sp-blond calendar-tabs-sidebar) */}
       <div className="px-3.5 py-2.5 bg-[#f3f3f3] border-b border-[#d1d1d1] flex items-center justify-between">
         <h3 className="text-xs font-bold text-[#217346] uppercase tracking-wider">
           카테고리 선택
@@ -88,10 +78,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           return (
             <button
               key={cat}
-              onClick={() => onSelectCategory(cat)}
-              className={`w-full px-3 py-1.5 text-xs font-semibold rounded-md border text-left transition-all ${
+              onClick={() => {
+                onSelectCategory(cat);
+                setCategory(cat);
+              }}
+              className={`w-full px-3 py-2 text-xs font-semibold rounded-md border text-left transition-all ${
                 isActive
-                  ? "bg-[#217346] text-white border-[#217346]"
+                  ? "bg-[#217346] text-white border-[#217346] shadow-xs"
                   : "bg-white text-[#333333] border-[#d1d1d1] hover:bg-[#e6f2ec] hover:text-[#217346]"
               }`}
             >
@@ -106,9 +99,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center justify-between text-[#666666] mb-1">
           <span className="font-semibold flex items-center gap-1">
             <BarChart3 className="w-3.5 h-3.5 text-[#217346]" />
-            대여 가동률
+            대여 현황
           </span>
-          <span className="font-bold text-[#217346] font-mono">{rentalRate}%</span>
+          <span className="font-bold text-[#217346] font-mono">{rentalRate}% 대여 중</span>
         </div>
         <div className="w-full bg-[#e2e8f0] h-2 rounded-full overflow-hidden">
           <div
@@ -122,8 +115,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* 3. New Item Registration Form */}
-      <div className="px-3.5 py-2.5 bg-[#f3f3f3] border-b border-[#d1d1d1] flex items-center justify-between">
+      {/* 3. New Item Registration Form (Customized per user request) */}
+      <div className="px-3.5 py-2 bg-[#f3f3f3] border-b border-[#d1d1d1] flex items-center justify-between">
         <h3 className="text-xs font-bold text-[#217346] uppercase tracking-wider flex items-center gap-1">
           <Plus className="w-3.5 h-3.5" />
           신규 물품 간편 등록
@@ -132,88 +125,72 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-3 flex-1 overflow-y-auto space-y-2.5">
         <form onSubmit={handleSubmit} className="space-y-2.5">
+          {/* Category Dropdown */}
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-[#333333]">
-              물품명 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="예: 소니 FX3 시네마 카메라"
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-[#333333]">
-              카테고리
+              카테고리 <span className="text-red-500">*</span>
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition cursor-pointer"
             >
-              {categories
-                .filter((c) => c !== "전체")
-                .map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold text-[#333333]">
-                관리 코드
-              </label>
-              <button
-                type="button"
-                onClick={handleGenerateCode}
-                className="text-[10px] text-[#217346] font-semibold hover:underline flex items-center gap-0.5"
-              >
-                <Sparkles className="w-2.5 h-2.5" />
-                자동생성
-              </button>
-            </div>
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="HYD-CAM-08"
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
-            />
-          </div>
-
+          {/* 설치 장소 (Replaced 비치 위치) */}
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-[#333333]">
-              비치 위치
+              설치 장소 <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="예: 6F ALT.1 복합문화공간"
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                required
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="예: 1F 정문 앞 / B1 대행사장"
+                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+              />
+            </div>
           </div>
 
+          {/* 대여자 (Replaced 관리 코드) */}
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-[#333333]">
-              상세 설명
+              대여자
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={borrower}
+                onChange={(e) => setBorrower(e.target.value)}
+                placeholder="예: 이지은 매니저 / 미입력 시 가용 상태"
+                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+              />
+            </div>
+          </div>
+
+          {/* 비고 (Replaced 상세 설명) */}
+          <div className="space-y-1">
+            <label className="block text-[11px] font-bold text-[#333333]">
+              비고
             </label>
             <textarea
               rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="구성품 또는 보관 주의사항"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="예: 주말 사은행사 안내 고지용"
               className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition resize-none"
             />
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -227,7 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ) : (
               <>
                 <Plus className="w-3.5 h-3.5" />
-                <span>물품 등록하기</span>
+                <span>등록하기</span>
               </>
             )}
           </button>
@@ -238,7 +215,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={onResetData}
             className="text-[11px] text-[#666666] hover:text-[#217346] underline"
           >
-            기본 샘플 데이터로 복구
+            샘플 데이터로 초기화
           </button>
         </div>
       </div>

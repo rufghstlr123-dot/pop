@@ -105,18 +105,40 @@ export async function POST(request: Request) {
     }
 
     if (action === "ADD") {
+      const category = payload.category || "A2 POP";
+      const location = payload.location || "장소 미지정";
+      const name = payload.name || `${category} (${location})`;
+      const hasBorrower = Boolean(payload.borrower_name && payload.borrower_name.trim());
+      const now = new Date().toISOString();
+
       const newItem: Item = {
-        ...payload,
-        id: "hyd-" + Date.now().toString(36),
-        status: "AVAILABLE",
-        borrower_name: null,
-        borrower_contact: null,
-        loaned_at: null,
-        expected_return_date: null,
-        created_at: new Date().toISOString(),
+        id: "pop-" + Date.now().toString(36),
+        name,
+        category,
+        code: payload.code || category.slice(0, 2) + "-" + Math.floor(10 + Math.random() * 90),
+        location,
+        status: hasBorrower ? "LOANED" : "AVAILABLE",
+        borrower_name: hasBorrower ? payload.borrower_name.trim() : null,
+        borrower_contact: payload.borrower_contact || null,
+        loaned_at: hasBorrower ? now : null,
+        expected_return_date: payload.expected_return_date || null,
+        description: payload.description || null,
+        created_at: now,
       };
 
       store.items.unshift(newItem);
+      if (hasBorrower) {
+        store.logs.unshift({
+          id: "log-" + Date.now(),
+          item_id: newItem.id,
+          item_name: newItem.name,
+          action: "BORROW",
+          user_name: newItem.borrower_name!,
+          note: payload.description || "신규 등록 시 즉시 대여",
+          timestamp: now,
+        });
+      }
+
       store.version = Date.now();
       return NextResponse.json({ success: true, item: newItem, version: store.version });
     }
