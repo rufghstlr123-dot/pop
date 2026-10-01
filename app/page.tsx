@@ -9,8 +9,6 @@ import { Sidebar } from "@/components/Sidebar";
 import { RosterTable } from "@/components/RosterTable";
 import { BorrowModal } from "@/components/BorrowModal";
 import { ReturnModal } from "@/components/ReturnModal";
-import { HistoryModal } from "@/components/HistoryModal";
-import { SyncGuideModal } from "@/components/SyncGuideModal";
 import {
   RealtimeNotification,
   NotificationMessage,
@@ -22,7 +20,6 @@ export default function HomePage() {
   const [items, setItems] = useState<Item[]>([]);
   const [logs, setLogs] = useState<RentalLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCloud, setIsCloud] = useState(false);
 
   // Filters & State
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,8 +28,6 @@ export default function HomePage() {
   // Modals
   const [selectedBorrowItem, setSelectedBorrowItem] = useState<Item | null>(null);
   const [selectedReturnItem, setSelectedReturnItem] = useState<Item | null>(null);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
@@ -67,8 +62,8 @@ export default function HomePage() {
 
       if (showNotificationOnChange) {
         addNotification(
-          "실시간 동기화 완료",
-          "다른 사용자의 변경사항이 실시간으로 반영되었습니다.",
+          "동기화 완료",
+          "변경사항이 반영되었습니다.",
           "INFO"
         );
       }
@@ -80,7 +75,6 @@ export default function HomePage() {
   }, [addNotification]);
 
   useEffect(() => {
-    setIsCloud(InventoryService.isCloudSync());
     loadData();
 
     const unsubscribe = InventoryService.subscribe(() => {
@@ -194,47 +188,8 @@ export default function HomePage() {
 
   return (
     <div className="app-container">
-      {/* App Header (sp-blond style) */}
-      <Header
-        isCloud={isCloud}
-        onOpenHistoryModal={() => setIsHistoryModalOpen(true)}
-        onOpenGuideModal={() => setIsGuideModalOpen(true)}
-        onRefresh={() => loadData()}
-      />
-
-      {/* Sub Navigation Bar (Current Category & Search) */}
-      <div className="px-5 py-2.5 bg-[#f8fafc] border-b border-[#d1d1d1] flex items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-[#64748b] font-medium">현재 카테고리:</span>
-          <span className="px-2.5 py-0.5 rounded font-bold bg-[#e6f2ec] text-[#217346] border border-[#bbf7d0]">
-            {selectedCategory}
-          </span>
-          <span className="text-[#cbd5e1]">|</span>
-          <span className="text-[#64748b]">
-            총 <strong className="text-[#1e293b] font-mono">{filteredItems.length}</strong>개 비치/대여 관리 중
-          </span>
-        </div>
-
-        {/* Search Box */}
-        <div className="relative w-72">
-          <Search className="w-3.5 h-3.5 text-[#94a3b8] absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="설치 장소, 대여자, 비고 검색..."
-            className="w-full pl-8 pr-7 py-1.5 bg-white border border-[#d1d1d1] rounded-md text-xs focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition placeholder:text-[#94a3b8]"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#94a3b8] hover:text-[#475569]"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </div>
+      {/* App Header */}
+      <Header onRefresh={() => loadData()} />
 
       {/* Main Content Area (Sidebar + Spreadsheet) */}
       <div className="flex flex-1 overflow-hidden">
@@ -250,6 +205,28 @@ export default function HomePage() {
 
         {/* Right Main Table Viewer */}
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
+          {/* Search Bar */}
+          <div className="px-4 py-2 bg-[#f8fafc] border-b border-[#d1d1d1] shrink-0">
+            <div className="relative w-full max-w-sm">
+              <Search className="w-3.5 h-3.5 text-[#94a3b8] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="설치 장소, 대여자, 비고 검색..."
+                className="w-full pl-8 pr-7 py-1.5 bg-white border border-[#d1d1d1] rounded-md text-xs focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition placeholder:text-[#94a3b8]"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#94a3b8] hover:text-[#475569]"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-2">
@@ -265,21 +242,6 @@ export default function HomePage() {
               onDelete={(id) => handleDeleteItem(id)}
             />
           )}
-
-          {/* Bottom Status Ribbon (sp-blond style) */}
-          <div className="px-4 py-2 bg-[#f3f3f3] border-t border-[#d1d1d1] flex items-center justify-between text-[11px] text-[#666666] shrink-0">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                실시간 동기화 정상 작동 중
-              </span>
-              <span>·</span>
-              <span>모든 접속자 화면에 새로고침 없이 1초 내 반영</span>
-            </div>
-            <div className="font-mono text-[#94a3b8]">
-              THE HYUNDAI PROMOTION DESK
-            </div>
-          </div>
         </main>
       </div>
 
@@ -296,18 +258,6 @@ export default function HomePage() {
         isOpen={Boolean(selectedReturnItem)}
         onClose={() => setSelectedReturnItem(null)}
         onSubmit={handleReturnSubmit}
-      />
-
-      <HistoryModal
-        logs={logs}
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-      />
-
-      <SyncGuideModal
-        isOpen={isGuideModalOpen}
-        onClose={() => setIsGuideModalOpen(false)}
-        isCloud={isCloud}
       />
 
       {/* Realtime Toast Notifications */}
