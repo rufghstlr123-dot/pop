@@ -1,92 +1,151 @@
 "use client";
 import React from "react";
-import { Sparkles, Plus, History, Cloud, Radio, HelpCircle } from "lucide-react";
+import { History, Cloud, Radio, HelpCircle, RefreshCw, LayoutGrid, Table } from "lucide-react";
 
 interface HeaderProps {
   isCloud: boolean;
-  onOpenAddModal: () => void;
+  totalCount: number;
+  availableCount: number;
+  loanedCount: number;
+  statusFilter: "ALL" | "AVAILABLE" | "LOANED";
+  onStatusFilterChange: (st: "ALL" | "AVAILABLE" | "LOANED") => void;
+  viewMode: "TABLE" | "GRID";
+  onToggleViewMode: (mode: "TABLE" | "GRID") => void;
   onOpenHistoryModal: () => void;
   onOpenGuideModal: () => void;
+  onRefresh: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   isCloud,
-  onOpenAddModal,
+  totalCount,
+  availableCount,
+  loanedCount,
+  statusFilter,
+  onStatusFilterChange,
+  viewMode,
+  onToggleViewMode,
   onOpenHistoryModal,
   onOpenGuideModal,
+  onRefresh,
 }) => {
   return (
-    <header className="border-b border-hyundai-creamDark bg-[#FAF9F5]/90 backdrop-blur-md sticky top-0 z-30 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Brand Logo & Name */}
-          <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 rounded-full bg-hyundai-primary flex items-center justify-center text-white shadow-md">
-              <span className="font-serif text-lg font-bold tracking-widest text-[#E5DEC9]">H</span>
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-hyundai-dark">
-                  THE HYUNDAI
-                </span>
-                <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-hyundai-sageLight text-hyundai-primary font-medium border border-hyundai-sage/30">
-                  Sounds Forest
-                </span>
-              </div>
-              <p className="text-xs text-hyundai-muted font-light tracking-wider">
-                RENTAL CONCIERGE · 물품 대여 & 반납 실시간 관리
-              </p>
-            </div>
-          </div>
-
-          {/* Action Buttons & Status */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Realtime Status Indicator */}
-            <div
-              onClick={onOpenGuideModal}
-              className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-white/80 border border-stone-200 text-xs text-hyundai-charcoal cursor-pointer hover:bg-stone-50 transition shadow-sm"
-              title="클릭하여 실시간 연동 상태 및 Vercel 배포 가이드 확인"
-            >
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <span className="font-medium text-[11px] tracking-wide text-hyundai-primary flex items-center gap-1">
-                {isCloud ? (
-                  <>
-                    <Cloud className="w-3 h-3 text-emerald-600" />
-                    Supabase 실시간 연동
-                  </>
-                ) : (
-                  <>
-                    <Radio className="w-3 h-3 text-emerald-600" />
-                    실시간 동기화 활성
-                  </>
-                )}
-              </span>
-              <HelpCircle className="w-3 h-3 text-stone-400" />
-            </div>
-
-            {/* History Button */}
-            <button
-              onClick={onOpenHistoryModal}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium text-hyundai-primary bg-stone-100 hover:bg-stone-200 transition border border-stone-200"
-            >
-              <History className="w-4 h-4" />
-              <span className="hidden md:inline">대여/반납</span>
-              <span>기록</span>
-            </button>
-
-            {/* Add Item Button */}
-            <button
-              onClick={onOpenAddModal}
-              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-white bg-hyundai-primary hover:bg-hyundai-accent transition shadow-sm hover:shadow"
-            >
-              <Plus className="w-4 h-4" />
-              <span>물품 등록</span>
-            </button>
-          </div>
+    <header className="px-5 py-3.5 bg-white border-b border-[#d1d1d1] flex flex-wrap items-center justify-between gap-3 shrink-0">
+      {/* Brand Title */}
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-[#217346] flex items-center justify-center text-white font-bold text-base shadow-sm">
+          H
         </div>
+        <div>
+          <h1 className="font-['Outfit',sans-serif] text-lg sm:text-xl font-bold text-[#217346] tracking-tight leading-tight">
+            THE HYUNDAI RENTAL
+          </h1>
+          <p className="text-[11px] text-[#666666] font-medium leading-none mt-0.5">
+            서비스데스크 물품 대여·반납 관제 시스템
+          </p>
+        </div>
+      </div>
+
+      {/* Filter Action Buttons (Like sp-blond header buttons) */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <button
+          onClick={() => onStatusFilterChange("ALL")}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-all ${
+            statusFilter === "ALL"
+              ? "bg-[#217346] text-white border-[#217346]"
+              : "bg-white text-[#333333] border-[#d1d1d1] hover:bg-[#e6f2ec] hover:text-[#217346]"
+          }`}
+        >
+          전체 물품 ({totalCount})
+        </button>
+
+        <button
+          onClick={() => onStatusFilterChange("AVAILABLE")}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-all ${
+            statusFilter === "AVAILABLE"
+              ? "bg-[#217346] text-white border-[#217346]"
+              : "bg-white text-[#333333] border-[#d1d1d1] hover:bg-[#e6f2ec] hover:text-[#217346]"
+          }`}
+        >
+          대여 가능 ({availableCount})
+        </button>
+
+        <button
+          onClick={() => onStatusFilterChange("LOANED")}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-all ${
+            statusFilter === "LOANED"
+              ? "bg-[#c2410c] text-white border-[#c2410c]"
+              : "bg-white text-[#333333] border-[#d1d1d1] hover:bg-[#ffedd5] hover:text-[#c2410c]"
+          }`}
+        >
+          대여 중 ({loanedCount})
+        </button>
+      </div>
+
+      {/* Right Controls */}
+      <div className="flex items-center gap-2">
+        {/* View Mode Toggle */}
+        <div className="flex items-center border border-[#d1d1d1] rounded-md overflow-hidden bg-white">
+          <button
+            onClick={() => onToggleViewMode("TABLE")}
+            className={`p-1.5 text-xs flex items-center gap-1 ${
+              viewMode === "TABLE"
+                ? "bg-[#217346] text-white font-medium"
+                : "text-[#666666] hover:bg-slate-100"
+            }`}
+            title="스프레드시트 표 형태"
+          >
+            <Table className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline text-[11px]">테이블</span>
+          </button>
+          <button
+            onClick={() => onToggleViewMode("GRID")}
+            className={`p-1.5 text-xs flex items-center gap-1 ${
+              viewMode === "GRID"
+                ? "bg-[#217346] text-white font-medium"
+                : "text-[#666666] hover:bg-slate-100"
+            }`}
+            title="카드 형태"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline text-[11px]">카드</span>
+          </button>
+        </div>
+
+        {/* Realtime Status Indicator */}
+        <div
+          onClick={onOpenGuideModal}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[#d1d1d1] bg-[#f8fafc] text-xs text-[#333333] cursor-pointer hover:bg-slate-100 transition"
+          title="실시간 연동 상태"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+          </span>
+          <span className="text-[11px] font-semibold text-[#217346] hidden sm:inline">
+            {isCloud ? "Supabase 연동" : "실시간 연동 중"}
+          </span>
+          <HelpCircle className="w-3 h-3 text-slate-400" />
+        </div>
+
+        {/* History Modal Button */}
+        <button
+          onClick={onOpenHistoryModal}
+          className="px-2.5 py-1.5 rounded-md border border-[#d1d1d1] bg-white hover:bg-[#e6f2ec] text-[#217346] text-xs font-semibold flex items-center gap-1 transition"
+        >
+          <History className="w-3.5 h-3.5" />
+          <span className="hidden md:inline">대여/반납</span>
+          <span>기록</span>
+        </button>
+
+        {/* Refresh */}
+        <button
+          onClick={onRefresh}
+          className="p-1.5 rounded-md border border-[#d1d1d1] bg-white hover:bg-slate-100 text-[#666666] transition"
+          title="새로고침"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
       </div>
     </header>
   );
