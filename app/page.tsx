@@ -215,15 +215,14 @@ export default function HomePage() {
   };
 
   // Reset to initial seed demo data
-  const handleResetData = () => {
+  const handleResetData = async () => {
     if (
       confirm(
         "샘플 초기 데이터로 복구하시겠습니까? (로컬 테스트 시 대여 현황이 초기화됩니다)"
       )
     ) {
-      localStorage.removeItem("the_hyundai_rental_items");
-      localStorage.removeItem("the_hyundai_rental_logs");
-      loadData();
+      await InventoryService.resetData();
+      await loadData();
       addNotification("데이터 초기화", "샘플 물품 목록으로 초기화되었습니다.", "INFO");
     }
   };
