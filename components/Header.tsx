@@ -1,10 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { RefreshCw, History, Clock } from "lucide-react";
+import { RefreshCw, Clock } from "lucide-react";
 
 interface HeaderProps {
   onRefresh: () => void;
-  onOpenHistory: () => void;
 }
 
 const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
@@ -21,7 +20,7 @@ function getFormattedDateTime(): string {
   return `${year}. ${month}. ${day} (${dayName}) ${hours}:${minutes}:${seconds}`;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onRefresh, onOpenHistory }) => {
+export const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
   const [currentDateTime, setCurrentDateTime] = useState<string>("");
 
   useEffect(() => {
@@ -43,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({ onRefresh, onOpenHistory }) => {
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
-        {/* Realtime Live Clock - High Legibility */}
+        {/* Realtime Live Clock */}
         {currentDateTime && (
           <div className="flex items-center gap-2 bg-[#f8fafc] px-3.5 py-1.5 rounded-md border border-[#cbd5e1] shadow-2xs">
             <Clock className="w-4 h-4 text-[#217346]" />
@@ -52,16 +51,6 @@ export const Header: React.FC<HeaderProps> = ({ onRefresh, onOpenHistory }) => {
             </span>
           </div>
         )}
-
-        {/* 과거 반납 기록 버튼 */}
-        <button
-          onClick={onOpenHistory}
-          className="px-3 py-1.5 rounded-md border border-[#d1d1d1] bg-white hover:bg-[#e6f2ec] text-[#217346] text-[0.85rem] font-bold flex items-center gap-1.5 transition shadow-2xs"
-          title="과거 반납 완료된 내역 확인"
-        >
-          <History className="w-4 h-4 text-[#217346]" />
-          <span>과거 반납 기록</span>
-        </button>
 
         {/* Refresh */}
         <button

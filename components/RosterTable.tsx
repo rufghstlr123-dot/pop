@@ -5,6 +5,7 @@ import { RotateCcw, Edit2, CheckCircle2 } from "lucide-react";
 
 interface RosterTableProps {
   items: Item[];
+  viewMode?: "CURRENT" | "RETURNED";
   onReturn: (item: Item) => void;
   onEdit: (item: Item) => void;
 }
@@ -26,17 +27,27 @@ function formatDate(dateString: string | null | undefined): string {
 
 export const RosterTable: React.FC<RosterTableProps> = ({
   items,
+  viewMode = "CURRENT",
   onReturn,
   onEdit,
 }) => {
   if (items.length === 0) {
+    const isReturnedView = viewMode === "RETURNED";
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-[#666666]">
         <div className="w-12 h-12 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-3">
           <CheckCircle2 className="w-6 h-6 text-[#94a3b8]" />
         </div>
-        <p className="font-bold text-[0.9rem] text-[#333333]">현재 대여 중인 물품이 없습니다.</p>
-        <p className="text-[0.8rem] text-[#94a3b8] mt-1">좌측 사이드바에서 새 물품을 대여 등록하거나 상단 [과거 반납 기록]을 확인하세요.</p>
+        <p className="font-bold text-[0.9rem] text-[#333333]">
+          {isReturnedView
+            ? "해당 카테고리에 반납 완료된 과거 기록이 없습니다."
+            : "현재 대여 중인 물품이 없습니다."}
+        </p>
+        <p className="text-[0.8rem] text-[#94a3b8] mt-1">
+          {isReturnedView
+            ? "대여 중인 물품을 [반납] 처리하면 이곳에 기록됩니다."
+            : "좌측 사이드바에서 새 물품을 간편하게 등록해보세요."}
+        </p>
       </div>
     );
   }

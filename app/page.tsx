@@ -6,9 +6,7 @@ import { InventoryService } from "@/lib/inventory-service";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { RosterTable } from "@/components/RosterTable";
-import { ReturnModal } from "@/components/ReturnModal";
 import { EditModal } from "@/components/EditModal";
-import { HistoryModal } from "@/components/HistoryModal";
 import {
   RealtimeNotification,
   NotificationMessage,
@@ -23,11 +21,10 @@ export default function HomePage() {
 
   // Filters & State
   const [selectedCategory, setSelectedCategory] = useState("전체");
+  const [viewMode, setViewMode] = useState<"CURRENT" | "RETURNED">("CURRENT");
 
   // Modals
-  const [selectedReturnItem, setSelectedReturnItem] = useState<Item | null>(null);
   const [selectedEditItem, setSelectedEditItem] = useState<Item | null>(null);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
@@ -95,27 +92,38 @@ export default function HomePage() {
     return { total, available, loaned };
   }, [items, selectedCategory]);
 
-  // Filter items: Only currently loaned items appear in the main dashboard table!
+  // Filter items based on selected category & viewMode toggle
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      if (item.status !== "LOANED") return false;
-      if (selectedCategory === "전체") return true;
-      return item.category === selectedCategory;
+      // Category filter
+      if (selectedCategory !== "전체" && item.category !== selectedCategory) {
+        return false;
+      }
+
+      // Status filter
+      if (selectedCategory === "전체") {
+        // "전체" category always shows active loans
+        return item.status === "LOANED";
+      } else {
+        // Individual category toggle
+        if (viewMode === "RETURNED") {
+          return item.status === "AVAILABLE" && Boolean(item.returned_at || item.borrower_name);
+        } else {
+          return item.status === "LOANED";
+        }
+      }
     });
-  }, [items, selectedCategory]);
+  }, [items, selectedCategory, viewMode]);
 
-  // Past returned items for HistoryModal
-  const returnedItems = useMemo(() => {
-    return items.filter((item) => item.status === "AVAILABLE" && Boolean(item.returned_at || item.borrower_name));
-  }, [items]);
-
-  // Actions
-  const handleReturnSubmit = async (itemId: string, note?: string) => {
-    const success = await InventoryService.returnItem(itemId, note);
+  // Actions: Direct return without popup
+  const handleDirectReturn = async (item: Item) => {
+    if (!confirm(`'${item.location} (${item.category})' 물품을 즉시 반납 처리하시겠습니까?`)) {
+      return;
+    }
+    const success = await InventoryService.returnItem(item.id);
     if (success) {
       await loadData();
-      const item = items.find((i) => i.id === itemId);
-      addNotification("반납 완료", `'${item?.location || "물품"}'이(가) 정상 반납되었습니다. [과거 반납 기록]에서 확인 가능합니다.`, "RETURN");
+      addNotification("반납 완료", `'${item.location}' 물품이 정상 반납되었습니다.`, "RETURN");
     } else {
       alert("반납 처리에 실패했습니다.");
     }
@@ -169,11 +177,8 @@ export default function HomePage() {
 
   return (
     <div className="app-container">
-      {/* App Header (sp-blond style with live clock and history modal trigger) */}
-      <Header
-        onRefresh={() => loadData()}
-        onOpenHistory={() => setIsHistoryModalOpen(true)}
-      />
+      {/* App Header (sp-blond style with live clock) */}
+      <Header onRefresh={() => loadData()} />
 
       {/* Main Content Area (Sidebar + Spreadsheet) */}
       <div className="flex flex-1 overflow-hidden">
@@ -181,14 +186,54 @@ export default function HomePage() {
         <Sidebar
           categories={CATEGORIES}
           selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            // Default to CURRENT loans when switching category
+            setViewMode("CURRENT");
+          }}
           stats={categoryStats}
           onAddItem={handleAddItem}
           onResetData={handleResetData}
         />
 
-        {/* Right Main Table Viewer (Only Currently LOANED items) */}
+        {/* Right Main Table Viewer */}
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
+          {/* Sub Header Toggle: Appears only for specific categories, NOT for "전체" */}
+          {selectedCategory !== "전체" && (
+            <div className="px-5 py-2.5 bg-[#f8fafc] border-b border-[#d1d1d1] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[0.85rem] font-bold text-[#1e293b]">{selectedCategory}</span>
+                <span className="text-[0.75rem] text-[#64748b]">
+                  ({viewMode === "CURRENT" ? "현재 대여 중" : "과거 반납 기록"} {filteredItems.length}건)
+                </span>
+              </div>
+
+              {/* Toggle Segment */}
+              <div className="flex items-center bg-[#e2e8f0] p-0.5 rounded-lg text-[0.8rem] font-bold">
+                <button
+                  onClick={() => setViewMode("CURRENT")}
+                  className={`px-3 py-1 rounded-md transition-all ${
+                    viewMode === "CURRENT"
+                      ? "bg-white text-[#217346] shadow-xs"
+                      : "text-[#64748b] hover:text-[#1e293b]"
+                  }`}
+                >
+                  현재 대여 중
+                </button>
+                <button
+                  onClick={() => setViewMode("RETURNED")}
+                  className={`px-3 py-1 rounded-md transition-all ${
+                    viewMode === "RETURNED"
+                      ? "bg-[#217346] text-white shadow-xs"
+                      : "text-[#64748b] hover:text-[#1e293b]"
+                  }`}
+                >
+                  과거 반납 기록
+                </button>
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-2">
@@ -199,7 +244,8 @@ export default function HomePage() {
           ) : (
             <RosterTable
               items={filteredItems}
-              onReturn={(i) => setSelectedReturnItem(i)}
+              viewMode={viewMode}
+              onReturn={handleDirectReturn}
               onEdit={(i) => setSelectedEditItem(i)}
             />
           )}
@@ -210,26 +256,12 @@ export default function HomePage() {
         </main>
       </div>
 
-      {/* Modals */}
-      <ReturnModal
-        item={selectedReturnItem}
-        isOpen={Boolean(selectedReturnItem)}
-        onClose={() => setSelectedReturnItem(null)}
-        onSubmit={handleReturnSubmit}
-      />
-
+      {/* Edit Modal */}
       <EditModal
         item={selectedEditItem}
         isOpen={Boolean(selectedEditItem)}
         onClose={() => setSelectedEditItem(null)}
         onSubmit={handleEditSubmit}
-      />
-
-      <HistoryModal
-        items={returnedItems}
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        onEdit={(item) => setSelectedEditItem(item)}
       />
 
       {/* Realtime Toast Notifications */}
