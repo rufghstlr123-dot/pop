@@ -1,11 +1,10 @@
 "use client";
 import React from "react";
 import { Item } from "@/types/inventory";
-import { User, MapPin, Clock, RotateCcw, ArrowRight, Trash2, CheckCircle2 } from "lucide-react";
+import { User, MapPin, Clock, RotateCcw, Trash2, CheckCircle2 } from "lucide-react";
 
 interface RosterTableProps {
   items: Item[];
-  onBorrow: (item: Item) => void;
   onReturn: (item: Item) => void;
   onDelete: (id: string) => void;
 }
@@ -43,7 +42,6 @@ function formatRelativeTime(dateString: string | null): string {
 
 export const RosterTable: React.FC<RosterTableProps> = ({
   items,
-  onBorrow,
   onReturn,
   onDelete,
 }) => {
@@ -76,13 +74,13 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] w-24 text-center">
               대여 상태
             </th>
-            <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] w-40">
-              대여 일시
+            <th className="py-2.5 px-3.5 font-bold text-[#333333] border-r border-[#d1d1d1] min-w-[170px]">
+              대여 일시 / 반납 예정
             </th>
             <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] min-w-[180px]">
               비고
             </th>
-            <th className="py-2.5 px-3 font-bold text-[#333333] w-28 text-center">
+            <th className="py-2.5 px-3 font-bold text-[#333333] w-24 text-center">
               관리 처리
             </th>
           </tr>
@@ -152,16 +150,22 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   )}
                 </td>
 
-                {/* 대여 일시 */}
-                <td className="py-3 px-3 border-r border-[#d1d1d1] text-[11px] whitespace-nowrap">
+                {/* 대여 일시 & 반납 예정 */}
+                <td className="py-3 px-3.5 border-r border-[#d1d1d1] text-[11px] whitespace-nowrap">
                   {!isAvailable && item.loaned_at ? (
-                    <div>
+                    <div className="space-y-0.5">
                       <div className="text-[#333333] font-medium">
-                        {formatDate(item.loaned_at)}
+                        대여: {formatDate(item.loaned_at)}
                       </div>
-                      <div className="text-[#64748b] text-[10px]">
-                        {formatRelativeTime(item.loaned_at)}
-                      </div>
+                      {item.expected_return_date ? (
+                        <div className="text-[#c2410c] font-semibold">
+                          예정: {formatDate(item.expected_return_date)}
+                        </div>
+                      ) : (
+                        <div className="text-[#64748b] text-[10px]">
+                          {formatRelativeTime(item.loaned_at)}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <span className="text-[#94a3b8]">-</span>
@@ -177,18 +181,10 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   )}
                 </td>
 
-                {/* Actions */}
+                {/* 관리 처리 (대여 버튼 제거, 반납 버튼 및 삭제 유지) */}
                 <td className="py-3 px-3 text-center whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1.5">
-                    {isAvailable ? (
-                      <button
-                        onClick={() => onBorrow(item)}
-                        className="px-3 py-1.5 rounded-md bg-[#217346] hover:bg-[#185a37] text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
-                      >
-                        <span>대여</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    ) : (
+                    {!isAvailable && (
                       <button
                         onClick={() => onReturn(item)}
                         className="px-2.5 py-1.5 rounded-md bg-[#ffedd5] hover:bg-[#fed7aa] text-[#c2410c] border border-[#fdba74] text-xs font-bold transition flex items-center gap-1 shadow-xs"

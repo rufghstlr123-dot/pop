@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { Plus, User, MapPin, FileText, Loader2, BarChart3 } from "lucide-react";
-import { Item, InventoryStats } from "@/types/inventory";
+import { Plus, User, MapPin, Calendar, Clock, Loader2, BarChart3 } from "lucide-react";
+import { InventoryStats } from "@/types/inventory";
 
 interface SidebarProps {
   categories: string[];
@@ -12,6 +12,8 @@ interface SidebarProps {
     category: string;
     location: string;
     borrower_name?: string;
+    loaned_at?: string;
+    expected_return_date?: string;
     description?: string;
   }) => Promise<void>;
   onResetData: () => void;
@@ -28,6 +30,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [category, setCategory] = useState(selectedCategory === "전체" ? "A2 POP" : selectedCategory);
   const [borrower, setBorrower] = useState("");
   const [location, setLocation] = useState("");
+  const [loanedAt, setLoanedAt] = useState(() => {
+    // Current local datetime
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 16);
+  });
+  const [expectedReturnDate, setExpectedReturnDate] = useState("");
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,11 +53,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         category,
         location: location.trim(),
         borrower_name: borrower.trim() || undefined,
+        loaned_at: loanedAt ? new Date(loanedAt).toISOString() : undefined,
+        expected_return_date: expectedReturnDate ? new Date(expectedReturnDate).toISOString() : undefined,
         description: note.trim() || undefined,
       });
       // Reset fields
       setBorrower("");
       setLocation("");
+      setExpectedReturnDate("");
       setNote("");
     } catch (err) {
       console.error(err);
@@ -62,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-full lg:w-72 bg-[#fdfdfd] border-r border-[#d1d1d1] flex flex-col shrink-0 overflow-hidden h-full">
-      {/* 1. Category Selection Section (sp-blond calendar-tabs-sidebar) */}
+      {/* 1. Category Selection Section */}
       <div className="px-3.5 py-2.5 bg-[#f3f3f3] border-b border-[#d1d1d1] flex items-center justify-between">
         <h3 className="text-xs font-bold text-[#217346] uppercase tracking-wider">
           카테고리 선택
@@ -115,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* 3. New Item Registration Form (Customized per user request) */}
+      {/* 3. New Item Registration Form */}
       <div className="px-3.5 py-2 bg-[#f3f3f3] border-b border-[#d1d1d1] flex items-center justify-between">
         <h3 className="text-xs font-bold text-[#217346] uppercase tracking-wider flex items-center gap-1">
           <Plus className="w-3.5 h-3.5" />
@@ -143,40 +155,63 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </select>
           </div>
 
-          {/* 설치 장소 (Replaced 비치 위치) */}
+          {/* 설치 장소 */}
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-[#333333]">
               설치 장소 <span className="text-red-500">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                required
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="예: 1F 정문 앞 / B1 대행사장"
-                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
-              />
-            </div>
+            <input
+              type="text"
+              required
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="예: 1F 정문 앞 / B1 대행사장"
+              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+            />
           </div>
 
-          {/* 대여자 (Replaced 관리 코드) */}
+          {/* 대여자 */}
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-[#333333]">
               대여자
             </label>
-            <div className="relative">
+            <input
+              type="text"
+              value={borrower}
+              onChange={(e) => setBorrower(e.target.value)}
+              placeholder="예: 이지은 매니저 / 미입력 시 가용"
+              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+            />
+          </div>
+
+          {/* 대여일시 & 반납예정일 */}
+          <div className="grid grid-cols-1 gap-2 pt-0.5">
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-[#333333]">
+                대여일시
+              </label>
               <input
-                type="text"
-                value={borrower}
-                onChange={(e) => setBorrower(e.target.value)}
-                placeholder="예: 이지은 매니저 / 미입력 시 가용 상태"
-                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+                type="datetime-local"
+                value={loanedAt}
+                onChange={(e) => setLoanedAt(e.target.value)}
+                className="w-full px-2 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold text-[#333333]">
+                반납예정일
+              </label>
+              <input
+                type="datetime-local"
+                value={expectedReturnDate}
+                onChange={(e) => setExpectedReturnDate(e.target.value)}
+                className="w-full px-2 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
               />
             </div>
           </div>
 
-          {/* 비고 (Replaced 상세 설명) */}
+          {/* 비고 */}
           <div className="space-y-1">
             <label className="block text-[11px] font-bold text-[#333333]">
               비고

@@ -7,7 +7,6 @@ import { InventoryService } from "@/lib/inventory-service";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { RosterTable } from "@/components/RosterTable";
-import { BorrowModal } from "@/components/BorrowModal";
 import { ReturnModal } from "@/components/ReturnModal";
 import {
   RealtimeNotification,
@@ -26,7 +25,6 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("A2 POP");
 
   // Modals
-  const [selectedBorrowItem, setSelectedBorrowItem] = useState<Item | null>(null);
   const [selectedReturnItem, setSelectedReturnItem] = useState<Item | null>(null);
 
   // Notifications
@@ -113,29 +111,6 @@ export default function HomePage() {
   }, [items, selectedCategory, searchQuery]);
 
   // Actions
-  const handleBorrowSubmit = async (
-    itemId: string,
-    borrowerName: string,
-    borrowerContact?: string,
-    expectedReturnDate?: string,
-    note?: string
-  ) => {
-    const success = await InventoryService.borrowItem(
-      itemId,
-      borrowerName,
-      borrowerContact,
-      expectedReturnDate,
-      note
-    );
-    if (success) {
-      await loadData();
-      const item = items.find((i) => i.id === itemId);
-      addNotification("대여 완료", `'${item?.location || "물품"}' 대여가 등록되었습니다.`, "BORROW");
-    } else {
-      alert("대여 처리에 실패했습니다.");
-    }
-  };
-
   const handleReturnSubmit = async (itemId: string, note?: string) => {
     const success = await InventoryService.returnItem(itemId, note);
     if (success) {
@@ -151,6 +126,8 @@ export default function HomePage() {
     category: string;
     location: string;
     borrower_name?: string;
+    loaned_at?: string;
+    expected_return_date?: string;
     description?: string;
   }) => {
     const created = await InventoryService.addItem({
@@ -160,6 +137,8 @@ export default function HomePage() {
       location: itemData.location,
       description: itemData.description || null,
       borrower_name: itemData.borrower_name || null,
+      loaned_at: itemData.loaned_at || null,
+      expected_return_date: itemData.expected_return_date || null,
     } as any);
 
     if (created) {
@@ -238,7 +217,6 @@ export default function HomePage() {
           ) : (
             <RosterTable
               items={filteredItems}
-              onBorrow={(i) => setSelectedBorrowItem(i)}
               onReturn={(i) => setSelectedReturnItem(i)}
               onDelete={(id) => handleDeleteItem(id)}
             />
@@ -252,13 +230,6 @@ export default function HomePage() {
       </div>
 
       {/* Modals */}
-      <BorrowModal
-        item={selectedBorrowItem}
-        isOpen={Boolean(selectedBorrowItem)}
-        onClose={() => setSelectedBorrowItem(null)}
-        onSubmit={handleBorrowSubmit}
-      />
-
       <ReturnModal
         item={selectedReturnItem}
         isOpen={Boolean(selectedReturnItem)}

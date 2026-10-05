@@ -111,6 +111,8 @@ export async function POST(request: Request) {
       const hasBorrower = Boolean(payload.borrower_name && payload.borrower_name.trim());
       const now = new Date().toISOString();
 
+      const loanedTime = payload.loaned_at || now;
+
       const newItem: Item = {
         id: "pop-" + Date.now().toString(36),
         name,
@@ -120,7 +122,7 @@ export async function POST(request: Request) {
         status: hasBorrower ? "LOANED" : "AVAILABLE",
         borrower_name: hasBorrower ? payload.borrower_name.trim() : null,
         borrower_contact: payload.borrower_contact || null,
-        loaned_at: hasBorrower ? now : null,
+        loaned_at: hasBorrower ? loanedTime : null,
         expected_return_date: payload.expected_return_date || null,
         description: payload.description || null,
         created_at: now,
@@ -135,7 +137,7 @@ export async function POST(request: Request) {
           action: "BORROW",
           user_name: newItem.borrower_name!,
           note: payload.description || "신규 등록 시 즉시 대여",
-          timestamp: now,
+          timestamp: loanedTime,
         });
       }
 
