@@ -156,14 +156,17 @@ export const InventoryService = {
         return false;
       }
 
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${year}-${month}-${day}`;
+
       const { error: itemError } = await supabase
         .from("items")
         .update({
           status: "AVAILABLE",
-          borrower_name: null,
-          borrower_contact: null,
-          loaned_at: null,
-          expected_return_date: null,
+          returned_at: todayStr,
         })
         .eq("id", itemId);
 
