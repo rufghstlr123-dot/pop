@@ -5,9 +5,9 @@ import { Item, RentalLog, InventoryStats } from "@/types/inventory";
 import { InventoryService } from "@/lib/inventory-service";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { RosterTable, getDueStatus } from "@/components/RosterTable";
+import { RosterTable, isDMinus1 } from "@/components/RosterTable";
 import { EditModal } from "@/components/EditModal";
-import { AlertCircle, AlertTriangle, Clock } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import {
   RealtimeNotification,
   NotificationMessage,
@@ -23,6 +23,7 @@ export default function HomePage() {
   // Filters & State
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [viewMode, setViewMode] = useState<"CURRENT" | "RETURNED">("CURRENT");
+  const [isHighlightActive, setIsHighlightActive] = useState(false);
 
   // Modals
   const [selectedEditItem, setSelectedEditItem] = useState<Item | null>(null);
@@ -93,19 +94,11 @@ export default function HomePage() {
     return { total, available, loaned };
   }, [items, selectedCategory]);
 
-  // Due alerts: find items that are OVERDUE or due TODAY/SOON among currently loaned items
-  const dueAlerts = useMemo(() => {
-    const loanedItems = items.filter((i) => i.status === "LOANED");
-    const overdueList = loanedItems.filter((i) => getDueStatus(i.expected_return_date).type === "OVERDUE");
-    const todayList = loanedItems.filter((i) => getDueStatus(i.expected_return_date).type === "TODAY");
-    const soonList = loanedItems.filter((i) => getDueStatus(i.expected_return_date).type === "SOON");
-
-    return {
-      overdueList,
-      todayList,
-      soonList,
-      totalUrgent: overdueList.length + todayList.length + soonList.length,
-    };
+  // D-1 Urgent alert items (tomorrow due date)
+  const d1Items = useMemo(() => {
+    return items.filter(
+      (i) => i.status === "LOANED" && isDMinus1(i.expected_return_date)
+    );
   }, [items]);
 
   // Filter items based on selected category & viewMode toggle
@@ -211,34 +204,26 @@ export default function HomePage() {
 
         {/* Right Main Table Viewer */}
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
-          {/* Due Alert Banner: Shows when there are overdue or today-due items */}
-          {dueAlerts.totalUrgent > 0 && viewMode === "CURRENT" && (
+          {/* Due Alert Banner: Only shows for D-1 items */}
+          {d1Items.length > 0 && viewMode === "CURRENT" && (
             <div className="px-5 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 flex items-center justify-between shrink-0 text-[0.8rem]">
               <div className="flex items-center gap-2 text-amber-900 font-medium">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>
-                  <strong>반납 예정 알림:</strong>{" "}
-                  {dueAlerts.overdueList.length > 0 && (
-                    <span className="text-rose-700 font-bold">
-                      연체 {dueAlerts.overdueList.length}건{" "}
-                    </span>
-                  )}
-                  {dueAlerts.todayList.length > 0 && (
-                    <span className="text-amber-800 font-bold">
-                      오늘 마감 {dueAlerts.todayList.length}건{" "}
-                    </span>
-                  )}
-                  {dueAlerts.soonList.length > 0 && (
-                    <span className="text-orange-800">
-                      임박(1~2일 내) {dueAlerts.soonList.length}건
-                    </span>
-                  )}
-                  이 있습니다. 기한을 확인해주세요.
+                  <strong>반납 예정 알림:</strong> 내일(D-1) 반납 예정인 물품이 있습니다. 기한을 확인해주세요.
                 </span>
               </div>
-              <div className="text-[0.75rem] text-amber-700 font-mono bg-white/70 px-2 py-0.5 rounded border border-amber-200">
-                총 {dueAlerts.totalUrgent}건 주의
-              </div>
+              <button
+                onClick={() => setIsHighlightActive((prev) => !prev)}
+                className={`px-3 py-1 rounded-md text-[0.75rem] font-bold border transition cursor-pointer flex items-center gap-1 shadow-2xs ${
+                  isHighlightActive
+                    ? "bg-[#217346] text-white border-[#217346]"
+                    : "bg-white text-amber-900 border-amber-300 hover:bg-amber-100"
+                }`}
+                title="클릭 시 해당 물품을 대시보드에서 하이라이트합니다."
+              >
+                <span>총 {d1Items.length}건</span>
+              </button>
             </div>
           )}
 
@@ -289,6 +274,7 @@ export default function HomePage() {
             <RosterTable
               items={filteredItems}
               viewMode={viewMode}
+              highlightedItemIds={isHighlightActive ? d1Items.map((i) => i.id) : []}
               onReturn={handleDirectReturn}
               onEdit={(i) => setSelectedEditItem(i)}
             />

@@ -1,11 +1,12 @@
 "use client";
 import React from "react";
 import { Item } from "@/types/inventory";
-import { RotateCcw, Edit2, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
+import { RotateCcw, Edit2, CheckCircle2 } from "lucide-react";
 
 interface RosterTableProps {
   items: Item[];
   viewMode?: "CURRENT" | "RETURNED";
+  highlightedItemIds?: string[];
   onReturn: (item: Item) => void;
   onEdit: (item: Item) => void;
 }
@@ -25,39 +26,25 @@ function formatDate(dateString: string | null | undefined): string {
   }
 }
 
-export function getDueStatus(targetDateStr: string | null | undefined): {
-  daysLeft: number;
-  label: string;
-  type: "OVERDUE" | "TODAY" | "SOON" | "NORMAL" | "NONE";
-} {
-  if (!targetDateStr) return { daysLeft: 0, label: "", type: "NONE" };
+export function isDMinus1(dateStr: string | null | undefined): boolean {
+  if (!dateStr) return false;
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-
-    const target = new Date(targetDateStr);
-    if (isNaN(target.getTime())) return { daysLeft: 0, label: "", type: "NONE" };
+    const target = new Date(dateStr);
+    if (isNaN(target.getTime())) return false;
     const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
-
     const diffDays = Math.round((targetDay - today) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-      return { daysLeft: diffDays, label: `D+${Math.abs(diffDays)} 연체`, type: "OVERDUE" };
-    } else if (diffDays === 0) {
-      return { daysLeft: 0, label: "오늘 마감", type: "TODAY" };
-    } else if (diffDays <= 2) {
-      return { daysLeft: diffDays, label: `D-${diffDays} 임박`, type: "SOON" };
-    } else {
-      return { daysLeft: diffDays, label: `D-${diffDays}`, type: "NORMAL" };
-    }
+    return diffDays === 1;
   } catch {
-    return { daysLeft: 0, label: "", type: "NONE" };
+    return false;
   }
 }
 
 export const RosterTable: React.FC<RosterTableProps> = ({
   items,
   viewMode = "CURRENT",
+  highlightedItemIds = [],
   onReturn,
   onEdit,
 }) => {
@@ -84,14 +71,14 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
   return (
     <div className="flex-1 overflow-x-auto overflow-y-auto bg-white">
-      <table className="w-full text-left border-collapse table-fixed min-w-[1020px]">
+      <table className="w-full text-left border-collapse table-fixed min-w-[1000px]">
         {/* Fixed Column Width Definitions for Uniform Display across all categories */}
         <colgroup>
           <col className="w-[100px]" />
           <col className="w-[230px]" />
           <col className="w-[130px]" />
           <col className="w-[125px]" />
-          <col className="w-[145px]" />
+          <col className="w-[130px]" />
           <col className="w-[125px]" />
           <col className="w-auto" />
           <col className="w-[150px]" />
@@ -127,17 +114,14 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         <tbody className="divide-y divide-[#d1d1d1]">
           {items.map((item) => {
             const isAvailable = item.status === "AVAILABLE";
-            const dueStatus = !isAvailable ? getDueStatus(item.expected_return_date) : { type: "NONE", label: "" };
-            const isAlertRow = dueStatus.type === "OVERDUE" || dueStatus.type === "TODAY";
+            const isHighlighted = highlightedItemIds.includes(item.id);
 
             return (
               <tr
                 key={item.id}
                 className={`transition-colors ${
-                  dueStatus.type === "OVERDUE"
-                    ? "bg-rose-50/40 hover:bg-rose-50/70"
-                    : dueStatus.type === "TODAY"
-                    ? "bg-amber-50/40 hover:bg-amber-50/70"
+                  isHighlighted
+                    ? "bg-amber-100/80 ring-2 ring-inset ring-amber-400 font-semibold text-[#1e293b]"
                     : "hover:bg-[#f8fafc]"
                 }`}
               >
@@ -158,19 +142,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
                 {/* 설치 장소 */}
                 <td className="py-2.5 px-4 border-r border-[#d1d1d1] text-[0.85rem] font-semibold text-[#1e293b] truncate" title={item.location}>
-                  <div className="flex items-center gap-1.5 truncate">
-                    {dueStatus.type === "OVERDUE" && (
-                      <span title="반납 기한 초과(연체)">
-                        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                      </span>
-                    )}
-                    {dueStatus.type === "TODAY" && (
-                      <span title="오늘 반납 마감일">
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      </span>
-                    )}
-                    <span className="truncate">{item.location}</span>
-                  </div>
+                  {item.location}
                 </td>
 
                 {/* 대여자 */}
@@ -183,37 +155,9 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   {formatDate(item.loaned_at)}
                 </td>
 
-                {/* 반납 예정 일자 & D-Day 알림 뱃지 */}
-                <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem]">
-                  {item.expected_return_date ? (
-                    <div className="flex items-center justify-center gap-1.5">
-                      <span className="text-[#333333]">
-                        {formatDate(item.expected_return_date)}
-                      </span>
-                      {dueStatus.type === "OVERDUE" && (
-                        <span className="px-1.5 py-0.2 rounded text-[0.7rem] font-bold bg-rose-100 text-rose-700 border border-rose-300 animate-pulse">
-                          {dueStatus.label}
-                        </span>
-                      )}
-                      {dueStatus.type === "TODAY" && (
-                        <span className="px-1.5 py-0.2 rounded text-[0.7rem] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                          {dueStatus.label}
-                        </span>
-                      )}
-                      {dueStatus.type === "SOON" && (
-                        <span className="px-1.5 py-0.2 rounded text-[0.7rem] font-semibold bg-orange-50 text-orange-700 border border-orange-200">
-                          {dueStatus.label}
-                        </span>
-                      )}
-                      {dueStatus.type === "NORMAL" && (
-                        <span className="px-1 py-0.2 rounded text-[0.7rem] text-[#64748b] bg-slate-100">
-                          {dueStatus.label}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-[#94a3b8]">-</span>
-                  )}
+                {/* 반납 예정 일자 (D-Day 뱃지 없이 날짜만 단정하게 표시) */}
+                <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem] text-[#c2410c] font-semibold">
+                  {formatDate(item.expected_return_date)}
                 </td>
 
                 {/* 반납 일자 */}
@@ -238,7 +182,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                         <span>반납</span>
                       </button>
                     ) : (
-                      <span className="inline-block px-2.5 py-0.5 rounded text-[0.8rem] font-bold bg-[#f1f5f9] text-[#64748b] border border-[#e2e8f0]">
+                      <span className="inline-block px-2 py-0.5 rounded text-[0.8rem] font-bold bg-[#f1f5f9] text-[#64748b] border border-[#e2e8f0]">
                         반납 완료
                       </span>
                     )}
