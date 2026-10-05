@@ -8,10 +8,6 @@ import { Sidebar } from "@/components/Sidebar";
 import { RosterTable, isDMinus1 } from "@/components/RosterTable";
 import { EditModal } from "@/components/EditModal";
 import { AlertCircle } from "lucide-react";
-import {
-  RealtimeNotification,
-  NotificationMessage,
-} from "@/components/RealtimeNotification";
 
 const CATEGORIES = ["전체", "A2 POP", "A3 POP", "철제배너"];
 
@@ -28,28 +24,7 @@ export default function HomePage() {
   // Modals
   const [selectedEditItem, setSelectedEditItem] = useState<Item | null>(null);
 
-  // Notifications
-  const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
-
-  const addNotification = useCallback(
-    (title: string, description: string, type: "BORROW" | "RETURN" | "ADD" | "INFO" = "INFO") => {
-      const id = Date.now().toString() + Math.random().toString(36).slice(2, 6);
-      const newNotification: NotificationMessage = { id, title, description, type };
-
-      setNotifications((prev) => [newNotification, ...prev.slice(0, 4)]);
-
-      setTimeout(() => {
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
-      }, 4000);
-    },
-    []
-  );
-
-  const dismissNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
-
-  const loadData = useCallback(async (showNotificationOnChange = false) => {
+  const loadData = useCallback(async () => {
     try {
       const [fetchedItems, fetchedLogs] = await Promise.all([
         InventoryService.getItems(),
@@ -58,26 +33,18 @@ export default function HomePage() {
 
       setItems(fetchedItems);
       setLogs(fetchedLogs);
-
-      if (showNotificationOnChange) {
-        addNotification(
-          "실시간 동기화 완료",
-          "다른 사용자의 변경사항이 실시간으로 반영되었습니다.",
-          "INFO"
-        );
-      }
     } catch (err) {
       console.error("Failed to load inventory data:", err);
     } finally {
       setLoading(false);
     }
-  }, [addNotification]);
+  }, []);
 
   useEffect(() => {
     loadData();
 
     const unsubscribe = InventoryService.subscribe(() => {
-      loadData(true);
+      loadData();
     });
 
     return () => {
@@ -123,6 +90,7 @@ export default function HomePage() {
   }, [items, selectedCategory, viewMode]);
 
   // Actions: Direct return without popup
+  // Actions: Direct return without popup
   const handleDirectReturn = async (item: Item) => {
     if (!confirm(`'${item.location} (${item.category})' 물품을 즉시 반납 처리하시겠습니까?`)) {
       return;
@@ -130,7 +98,6 @@ export default function HomePage() {
     const success = await InventoryService.returnItem(item.id);
     if (success) {
       await loadData();
-      addNotification("반납 완료", `'${item.location}' 물품이 정상 반납되었습니다.`, "RETURN");
     } else {
       alert("반납 처리에 실패했습니다.");
     }
@@ -140,9 +107,17 @@ export default function HomePage() {
     const success = await InventoryService.editItem(itemId, updatedData);
     if (success) {
       await loadData();
-      addNotification("수정 완료", "물품 정보가 수정되었습니다.", "INFO");
     } else {
       alert("수정에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    const success = await InventoryService.deleteItem(itemId);
+    if (success) {
+      await loadData();
+    } else {
+      alert("삭제 처리에 실패했습니다.");
     }
   };
 
@@ -168,7 +143,6 @@ export default function HomePage() {
 
     if (created) {
       await loadData();
-      addNotification("신규 등록", `'${itemData.location}'에 ${itemData.category} 대여가 등록되었습니다.`, "ADD");
     } else {
       alert("등록에 실패했습니다.");
     }
@@ -190,14 +164,13 @@ export default function HomePage() {
     if (confirm("모든 데이터를 기본 샘플 데이터로 복구하시겠습니까?")) {
       await InventoryService.resetData();
       await loadData();
-      addNotification("초기화 완료", "기본 데이터로 복구되었습니다.", "INFO");
     }
   };
 
   return (
     <div className="app-container">
       {/* App Header (sp-blond style with live clock) */}
-      <Header onRefresh={() => loadData()} />
+      <Header />
 
       {/* Main Content Area (Sidebar + Spreadsheet) */}
       <div className="flex flex-1 overflow-hidden">
@@ -304,12 +277,7 @@ export default function HomePage() {
         isOpen={Boolean(selectedEditItem)}
         onClose={() => setSelectedEditItem(null)}
         onSubmit={handleEditSubmit}
-      />
-
-      {/* Realtime Toast Notifications */}
-      <RealtimeNotification
-        notifications={notifications}
-        onDismiss={dismissNotification}
+        onDelete={handleDeleteItem}
       />
     </div>
   );

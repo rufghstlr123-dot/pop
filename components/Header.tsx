@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { RefreshCw, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 
 interface HeaderProps {
-  onRefresh: () => void;
+  onRefresh?: () => void;
 }
 
 const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
@@ -20,7 +20,7 @@ function getFormattedDateTime(): string {
   return `${year}. ${month}. ${day} (${dayName}) ${hours}:${minutes}:${seconds}`;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
+export const Header: React.FC<HeaderProps> = () => {
   const [currentDateTime, setCurrentDateTime] = useState<string>("");
 
   useEffect(() => {
@@ -51,15 +51,6 @@ export const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
             </span>
           </div>
         )}
-
-        {/* Refresh */}
-        <button
-          onClick={onRefresh}
-          className="p-2 rounded-md border border-[#d1d1d1] bg-white hover:bg-slate-100 text-[#666666] transition"
-          title="데이터 새로고침"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-        </button>
       </div>
     </header>
   );

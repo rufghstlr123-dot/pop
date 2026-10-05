@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { X, Check, Loader2 } from "lucide-react";
+import { X, Check, Loader2, Trash2 } from "lucide-react";
 import { Item } from "@/types/inventory";
 
 interface EditModalProps {
@@ -8,6 +8,7 @@ interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (itemId: string, updatedData: Partial<Item>) => Promise<void>;
+  onDelete?: (itemId: string) => Promise<void>;
 }
 
 function formatDateInput(value: string): string {
@@ -22,6 +23,7 @@ export const EditModal: React.FC<EditModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onDelete,
 }) => {
   const [location, setLocation] = useState("");
   const [borrowerName, setBorrowerName] = useState("");
@@ -175,32 +177,62 @@ export const EditModal: React.FC<EditModalProps> = ({
           </div>
 
           {/* Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-3 py-1.5 rounded-md border border-[#d1d1d1] bg-white text-[#333333] text-[0.85rem] font-semibold hover:bg-slate-100 transition"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-1.5 rounded-md bg-[#217346] hover:bg-[#185a37] text-white text-[0.85rem] font-bold transition flex items-center gap-1 shadow-xs disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>저장 중...</span>
-                </>
-              ) : (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>수정 완료</span>
-                </>
+          <div className="pt-2 flex items-center justify-between border-t border-[#eeeeee]">
+            <div>
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (confirm(`'${item.location} (${item.category})' 물품을 목록에서 영구 삭제하시겠습니까?`)) {
+                      setIsSubmitting(true);
+                      try {
+                        await onDelete(item.id);
+                        onClose();
+                      } catch (err) {
+                        console.error(err);
+                        alert("삭제 처리 중 오류가 발생했습니다.");
+                      } finally {
+                        setIsSubmitting(false);
+                      }
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 rounded-md bg-[#fee2e2] hover:bg-[#fecaca] text-[#b91c1c] border border-[#fca5a5] text-[0.85rem] font-bold transition flex items-center gap-1 shadow-2xs disabled:opacity-50"
+                  title="이 물품을 영구 삭제"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>삭제</span>
+                </button>
               )}
-            </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="px-3 py-1.5 rounded-md border border-[#d1d1d1] bg-white text-[#333333] text-[0.85rem] font-semibold hover:bg-slate-100 transition"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-4 py-1.5 rounded-md bg-[#217346] hover:bg-[#185a37] text-white text-[0.85rem] font-bold transition flex items-center gap-1 shadow-xs disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>저장 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>수정 완료</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
