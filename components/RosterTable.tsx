@@ -118,10 +118,10 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
             return (
               <tr
-                key={item.id}
+                key={item.id + (isHighlighted ? "-flash" : "")}
                 className={`transition-colors ${
                   isHighlighted
-                    ? "bg-amber-100/80 ring-2 ring-inset ring-amber-400 font-semibold text-[#1e293b]"
+                    ? "flash-highlight-5 font-semibold text-[#1e293b]"
                     : "hover:bg-[#f8fafc]"
                 }`}
               >

@@ -174,6 +174,18 @@ export default function HomePage() {
     }
   };
 
+  const handleTriggerHighlight = () => {
+    setIsHighlightActive(false);
+    setTimeout(() => {
+      setIsHighlightActive(true);
+    }, 20);
+
+    // 5번 반짝인 후 자동 중단 (0.7s * 5 = 3.5s)
+    setTimeout(() => {
+      setIsHighlightActive(false);
+    }, 3600);
+  };
+
   const handleResetData = async () => {
     if (confirm("모든 데이터를 기본 샘플 데이터로 복구하시겠습니까?")) {
       await InventoryService.resetData();
@@ -210,17 +222,17 @@ export default function HomePage() {
               <div className="flex items-center gap-2 text-amber-900 font-medium">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>
-                  <strong>반납 예정 알림:</strong> 내일(D-1) 반납 예정인 물품이 있습니다. 기한을 확인해주세요.
+                  <strong>반납 예정 알림:</strong> 내일(D-1) 반납 예정인 물품이 있습니다.
                 </span>
               </div>
               <button
-                onClick={() => setIsHighlightActive((prev) => !prev)}
+                onClick={handleTriggerHighlight}
                 className={`px-3 py-1 rounded-md text-[0.75rem] font-bold border transition cursor-pointer flex items-center gap-1 shadow-2xs ${
                   isHighlightActive
                     ? "bg-[#217346] text-white border-[#217346]"
                     : "bg-white text-amber-900 border-amber-300 hover:bg-amber-100"
                 }`}
-                title="클릭 시 해당 물품을 대시보드에서 하이라이트합니다."
+                title="클릭 시 해당 물품을 대시보드에서 5회 하이라이트합니다."
               >
                 <span>총 {d1Items.length}건</span>
               </button>

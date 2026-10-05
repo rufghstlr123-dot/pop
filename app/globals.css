@@ -92,3 +92,17 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--pr-color);
 }
+
+/* 5 times flashing highlight animation */
+@keyframes flashRow5 {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: #fef08a; /* amber-200 */
+  }
+}
+
+.flash-highlight-5 {
+  animation: flashRow5 0.7s ease-in-out 5;
+}
