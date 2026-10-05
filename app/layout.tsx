@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "THE HYUNDAI RENTAL · 더현대 서울 물품 대여 관리",
-  description: "사운즈 포레스트 감성의 실시간 물품 대여 및 반납 관리 시스템. 실시간 다중 사용자 동기화 지원.",
-  keywords: ["더현대", "물품대여", "실시간", "더현대서울", "자산관리", "사운즈포레스트"],
+  title: "판매기획팀 POP 대여",
+  description: "판매기획팀 POP 대여 및 반납 관리 시스템. 실시간 다중 사용자 동기화 지원.",
+  keywords: ["판매기획팀", "POP대여", "실시간", "물품대여", "자산관리"],
   openGraph: {
-    title: "THE HYUNDAI RENTAL · 더현대 서울 물품 대여 관리",
+    title: "판매기획팀 POP 대여",
     description: "실시간 연동으로 누구나 동일한 대여 현황을 확인하고 반납/대여할 수 있습니다.",
     type: "website",
   },
