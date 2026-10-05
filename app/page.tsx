@@ -5,9 +5,9 @@ import { Item, RentalLog, InventoryStats } from "@/types/inventory";
 import { InventoryService } from "@/lib/inventory-service";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { RosterTable } from "@/components/RosterTable";
+import { RosterTable, getDueStatus } from "@/components/RosterTable";
 import { EditModal } from "@/components/EditModal";
-import { ReBorrowModal } from "@/components/ReBorrowModal";
+import { AlertCircle, AlertTriangle, Clock } from "lucide-react";
 import {
   RealtimeNotification,
   NotificationMessage,
@@ -26,7 +26,6 @@ export default function HomePage() {
 
   // Modals
   const [selectedEditItem, setSelectedEditItem] = useState<Item | null>(null);
-  const [selectedReBorrowItem, setSelectedReBorrowItem] = useState<Item | null>(null);
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
@@ -94,6 +93,21 @@ export default function HomePage() {
     return { total, available, loaned };
   }, [items, selectedCategory]);
 
+  // Due alerts: find items that are OVERDUE or due TODAY/SOON among currently loaned items
+  const dueAlerts = useMemo(() => {
+    const loanedItems = items.filter((i) => i.status === "LOANED");
+    const overdueList = loanedItems.filter((i) => getDueStatus(i.expected_return_date).type === "OVERDUE");
+    const todayList = loanedItems.filter((i) => getDueStatus(i.expected_return_date).type === "TODAY");
+    const soonList = loanedItems.filter((i) => getDueStatus(i.expected_return_date).type === "SOON");
+
+    return {
+      overdueList,
+      todayList,
+      soonList,
+      totalUrgent: overdueList.length + todayList.length + soonList.length,
+    };
+  }, [items]);
+
   // Filter items based on selected category & viewMode toggle
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -126,38 +140,6 @@ export default function HomePage() {
       addNotification("반납 완료", `'${item.location}' 물품이 정상 반납되었습니다.`, "RETURN");
     } else {
       alert("반납 처리에 실패했습니다.");
-    }
-  };
-
-  // Re-borrow: Start new rental from returned record
-  const handleReBorrowSubmit = async (
-    itemId: string,
-    data: {
-      borrower_name: string;
-      loaned_at: string;
-      expected_return_date?: string;
-      description?: string;
-    }
-  ) => {
-    const success = await InventoryService.editItem(itemId, {
-      status: "LOANED",
-      borrower_name: data.borrower_name,
-      loaned_at: data.loaned_at,
-      expected_return_date: data.expected_return_date || null,
-      returned_at: null,
-      description: data.description || null,
-    });
-    if (success) {
-      await loadData();
-      // Switch view back to CURRENT loans so user immediately sees newly activated loan
-      setViewMode("CURRENT");
-      addNotification(
-        "대여 시작",
-        `'${data.borrower_name}'님에게 대여가 다시 시작되었습니다.`,
-        "BORROW"
-      );
-    } else {
-      alert("대여 처리에 실패했습니다.");
     }
   };
 
@@ -220,7 +202,6 @@ export default function HomePage() {
           selectedCategory={selectedCategory}
           onSelectCategory={(cat) => {
             setSelectedCategory(cat);
-            // Default to CURRENT loans when switching category
             setViewMode("CURRENT");
           }}
           stats={categoryStats}
@@ -230,6 +211,37 @@ export default function HomePage() {
 
         {/* Right Main Table Viewer */}
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
+          {/* Due Alert Banner: Shows when there are overdue or today-due items */}
+          {dueAlerts.totalUrgent > 0 && viewMode === "CURRENT" && (
+            <div className="px-5 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200 flex items-center justify-between shrink-0 text-[0.8rem]">
+              <div className="flex items-center gap-2 text-amber-900 font-medium">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  <strong>반납 예정 알림:</strong>{" "}
+                  {dueAlerts.overdueList.length > 0 && (
+                    <span className="text-rose-700 font-bold">
+                      연체 {dueAlerts.overdueList.length}건{" "}
+                    </span>
+                  )}
+                  {dueAlerts.todayList.length > 0 && (
+                    <span className="text-amber-800 font-bold">
+                      오늘 마감 {dueAlerts.todayList.length}건{" "}
+                    </span>
+                  )}
+                  {dueAlerts.soonList.length > 0 && (
+                    <span className="text-orange-800">
+                      임박(1~2일 내) {dueAlerts.soonList.length}건
+                    </span>
+                  )}
+                  이 있습니다. 기한을 확인해주세요.
+                </span>
+              </div>
+              <div className="text-[0.75rem] text-amber-700 font-mono bg-white/70 px-2 py-0.5 rounded border border-amber-200">
+                총 {dueAlerts.totalUrgent}건 주의
+              </div>
+            </div>
+          )}
+
           {/* Sub Header Toggle: Appears only for specific categories, NOT for "전체" */}
           {selectedCategory !== "전체" && (
             <div className="px-5 py-2.5 bg-[#f8fafc] border-b border-[#d1d1d1] flex items-center justify-between shrink-0">
@@ -279,7 +291,6 @@ export default function HomePage() {
               viewMode={viewMode}
               onReturn={handleDirectReturn}
               onEdit={(i) => setSelectedEditItem(i)}
-              onReBorrow={(i) => setSelectedReBorrowItem(i)}
             />
           )}
 
@@ -295,14 +306,6 @@ export default function HomePage() {
         isOpen={Boolean(selectedEditItem)}
         onClose={() => setSelectedEditItem(null)}
         onSubmit={handleEditSubmit}
-      />
-
-      {/* Re-Borrow Modal */}
-      <ReBorrowModal
-        item={selectedReBorrowItem}
-        isOpen={Boolean(selectedReBorrowItem)}
-        onClose={() => setSelectedReBorrowItem(null)}
-        onSubmit={handleReBorrowSubmit}
       />
 
       {/* Realtime Toast Notifications */}

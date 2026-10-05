@@ -1,14 +1,13 @@
 "use client";
 import React from "react";
 import { Item } from "@/types/inventory";
-import { RotateCcw, Edit2, CheckCircle2 } from "lucide-react";
+import { RotateCcw, Edit2, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
 
 interface RosterTableProps {
   items: Item[];
   viewMode?: "CURRENT" | "RETURNED";
   onReturn: (item: Item) => void;
   onEdit: (item: Item) => void;
-  onReBorrow?: (item: Item) => void;
 }
 
 function formatDate(dateString: string | null | undefined): string {
@@ -26,12 +25,41 @@ function formatDate(dateString: string | null | undefined): string {
   }
 }
 
+export function getDueStatus(targetDateStr: string | null | undefined): {
+  daysLeft: number;
+  label: string;
+  type: "OVERDUE" | "TODAY" | "SOON" | "NORMAL" | "NONE";
+} {
+  if (!targetDateStr) return { daysLeft: 0, label: "", type: "NONE" };
+  try {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    const target = new Date(targetDateStr);
+    if (isNaN(target.getTime())) return { daysLeft: 0, label: "", type: "NONE" };
+    const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+
+    const diffDays = Math.round((targetDay - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return { daysLeft: diffDays, label: `D+${Math.abs(diffDays)} 연체`, type: "OVERDUE" };
+    } else if (diffDays === 0) {
+      return { daysLeft: 0, label: "오늘 마감", type: "TODAY" };
+    } else if (diffDays <= 2) {
+      return { daysLeft: diffDays, label: `D-${diffDays} 임박`, type: "SOON" };
+    } else {
+      return { daysLeft: diffDays, label: `D-${diffDays}`, type: "NORMAL" };
+    }
+  } catch {
+    return { daysLeft: 0, label: "", type: "NONE" };
+  }
+}
+
 export const RosterTable: React.FC<RosterTableProps> = ({
   items,
   viewMode = "CURRENT",
   onReturn,
   onEdit,
-  onReBorrow,
 }) => {
   if (items.length === 0) {
     const isReturnedView = viewMode === "RETURNED";
@@ -56,14 +84,14 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
   return (
     <div className="flex-1 overflow-x-auto overflow-y-auto bg-white">
-      <table className="w-full text-left border-collapse table-fixed min-w-[1000px]">
+      <table className="w-full text-left border-collapse table-fixed min-w-[1020px]">
         {/* Fixed Column Width Definitions for Uniform Display across all categories */}
         <colgroup>
           <col className="w-[100px]" />
           <col className="w-[230px]" />
           <col className="w-[130px]" />
           <col className="w-[125px]" />
-          <col className="w-[130px]" />
+          <col className="w-[145px]" />
           <col className="w-[125px]" />
           <col className="w-auto" />
           <col className="w-[150px]" />
@@ -99,10 +127,19 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         <tbody className="divide-y divide-[#d1d1d1]">
           {items.map((item) => {
             const isAvailable = item.status === "AVAILABLE";
+            const dueStatus = !isAvailable ? getDueStatus(item.expected_return_date) : { type: "NONE", label: "" };
+            const isAlertRow = dueStatus.type === "OVERDUE" || dueStatus.type === "TODAY";
+
             return (
               <tr
                 key={item.id}
-                className="hover:bg-[#f8fafc] transition-colors"
+                className={`transition-colors ${
+                  dueStatus.type === "OVERDUE"
+                    ? "bg-rose-50/40 hover:bg-rose-50/70"
+                    : dueStatus.type === "TODAY"
+                    ? "bg-amber-50/40 hover:bg-amber-50/70"
+                    : "hover:bg-[#f8fafc]"
+                }`}
               >
                 {/* Category Badge */}
                 <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap">
@@ -121,7 +158,19 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
                 {/* 설치 장소 */}
                 <td className="py-2.5 px-4 border-r border-[#d1d1d1] text-[0.85rem] font-semibold text-[#1e293b] truncate" title={item.location}>
-                  {item.location}
+                  <div className="flex items-center gap-1.5 truncate">
+                    {dueStatus.type === "OVERDUE" && (
+                      <span title="반납 기한 초과(연체)">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      </span>
+                    )}
+                    {dueStatus.type === "TODAY" && (
+                      <span title="오늘 반납 마감일">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      </span>
+                    )}
+                    <span className="truncate">{item.location}</span>
+                  </div>
                 </td>
 
                 {/* 대여자 */}
@@ -134,9 +183,37 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   {formatDate(item.loaned_at)}
                 </td>
 
-                {/* 반납 예정 일자 */}
-                <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem] text-[#c2410c] font-semibold">
-                  {formatDate(item.expected_return_date)}
+                {/* 반납 예정 일자 & D-Day 알림 뱃지 */}
+                <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem]">
+                  {item.expected_return_date ? (
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span className="text-[#333333]">
+                        {formatDate(item.expected_return_date)}
+                      </span>
+                      {dueStatus.type === "OVERDUE" && (
+                        <span className="px-1.5 py-0.2 rounded text-[0.7rem] font-bold bg-rose-100 text-rose-700 border border-rose-300 animate-pulse">
+                          {dueStatus.label}
+                        </span>
+                      )}
+                      {dueStatus.type === "TODAY" && (
+                        <span className="px-1.5 py-0.2 rounded text-[0.7rem] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                          {dueStatus.label}
+                        </span>
+                      )}
+                      {dueStatus.type === "SOON" && (
+                        <span className="px-1.5 py-0.2 rounded text-[0.7rem] font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                          {dueStatus.label}
+                        </span>
+                      )}
+                      {dueStatus.type === "NORMAL" && (
+                        <span className="px-1 py-0.2 rounded text-[0.7rem] text-[#64748b] bg-slate-100">
+                          {dueStatus.label}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-[#94a3b8]">-</span>
+                  )}
                 </td>
 
                 {/* 반납 일자 */}
@@ -161,14 +238,9 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                         <span>반납</span>
                       </button>
                     ) : (
-                      <button
-                        onClick={() => onReBorrow && onReBorrow(item)}
-                        className="px-2 py-0.5 rounded text-[0.8rem] font-bold bg-[#f1f5f9] hover:bg-[#217346] text-[#475569] hover:text-white border border-[#cbd5e1] hover:border-[#217346] transition-all inline-flex items-center gap-1 shadow-2xs group cursor-pointer"
-                        title="반납 완료된 상태입니다. 클릭 시 다시 대여를 시작합니다."
-                      >
-                        <RotateCcw className="w-2.5 h-2.5 text-[#217346] group-hover:text-white transition-colors" />
-                        <span>반납 완료</span>
-                      </button>
+                      <span className="inline-block px-2.5 py-0.5 rounded text-[0.8rem] font-bold bg-[#f1f5f9] text-[#64748b] border border-[#e2e8f0]">
+                        반납 완료
+                      </span>
                     )}
 
                     <button
