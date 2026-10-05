@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, ChevronDown } from "lucide-react";
 import { InventoryStats } from "@/types/inventory";
 
 interface SidebarProps {
@@ -92,12 +92,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="w-full lg:w-72 bg-[#fdfdfd] border-r border-[#d1d1d1] flex flex-col shrink-0 overflow-hidden h-full">
       {/* 1. Category Selection Section */}
       <div className="px-3.5 py-2.5 bg-[#f3f3f3] border-b border-[#d1d1d1] flex items-center justify-between">
-        <h3 className="text-xs font-bold text-[#217346] uppercase tracking-wider">
+        <h3 className="text-[0.85rem] font-bold text-[#217346] uppercase tracking-wider">
           카테고리 선택
         </h3>
-        <span className="text-[10px] text-[#666666] font-medium font-mono">
-          {stats.total} ITEMS
-        </span>
       </div>
 
       <div className="p-2.5 bg-white border-b border-[#d1d1d1] space-y-1">
@@ -110,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onSelectCategory(cat);
                 setCategory(cat);
               }}
-              className={`w-full px-3 py-2 text-xs font-semibold rounded-md border text-left transition-all ${
+              className={`w-full px-3 py-2 text-[0.85rem] font-semibold rounded-md border text-left transition-all ${
                 isActive
                   ? "bg-[#217346] text-white border-[#217346] shadow-xs"
                   : "bg-white text-[#333333] border-[#d1d1d1] hover:bg-[#e6f2ec] hover:text-[#217346]"
@@ -132,22 +129,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-3.5 flex-1 overflow-y-auto space-y-2.5">
         <form onSubmit={handleSubmit} className="space-y-2.5">
-          {/* Category Dropdown */}
+          {/* Category Dropdown (Custom styled arrow with natural spacing) */}
           <div className="space-y-1">
             <label className="block text-[0.8rem] font-semibold text-[#333333]">
               카테고리 <span className="text-red-500">*</span>
             </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition cursor-pointer"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full pl-2.5 pr-8 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white appearance-none focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition cursor-pointer"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-[#64748b] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
 
           {/* 설치 장소 */}
@@ -179,11 +179,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
 
-          {/* 대여일시 & 반납예정일 (yyyy-mm-dd format with 8-digit auto format) */}
+          {/* 대여 일자 & 반납 예정 일자 */}
           <div className="grid grid-cols-1 gap-2 pt-0.5">
             <div className="space-y-1">
               <label className="block text-[0.8rem] font-semibold text-[#333333]">
-                대여 일시
+                대여 일자
               </label>
               <input
                 type="text"
@@ -197,7 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <div className="space-y-1">
               <label className="block text-[0.8rem] font-semibold text-[#333333]">
-                반납 일시
+                반납 예정 일자
               </label>
               <input
                 type="text"

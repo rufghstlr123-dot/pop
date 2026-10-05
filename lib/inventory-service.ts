@@ -247,6 +247,33 @@ export const InventoryService = {
     return null;
   },
 
+  async editItem(itemId: string, data: Partial<Item>): Promise<boolean> {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from("items").update(data).eq("id", itemId);
+      return !error;
+    }
+
+    try {
+      const res = await fetch("/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "EDIT",
+          payload: { itemId, data },
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.version) currentServerVersion = json.version;
+        getBroadcastChannel()?.postMessage({ type: "SYNC_UPDATED" });
+        return true;
+      }
+    } catch (e) {
+      console.error("Edit item API error:", e);
+    }
+    return false;
+  },
+
   async deleteItem(itemId: string): Promise<boolean> {
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from("items").delete().eq("id", itemId);

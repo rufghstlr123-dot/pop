@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Search } from "lucide-react";
 import { Item, RentalLog, InventoryStats } from "@/types/inventory";
 import { InventoryService } from "@/lib/inventory-service";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { RosterTable } from "@/components/RosterTable";
 import { ReturnModal } from "@/components/ReturnModal";
+import { EditModal } from "@/components/EditModal";
 import {
   RealtimeNotification,
   NotificationMessage,
@@ -21,11 +21,11 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   // Filters & State
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("A2 POP");
 
   // Modals
   const [selectedReturnItem, setSelectedReturnItem] = useState<Item | null>(null);
+  const [selectedEditItem, setSelectedEditItem] = useState<Item | null>(null);
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
@@ -93,22 +93,10 @@ export default function HomePage() {
     return { total, available, loaned };
   }, [items, selectedCategory]);
 
-  // Filter items by category and search
+  // Filter items by category
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      if (item.category !== selectedCategory) return false;
-
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchLocation = item.location.toLowerCase().includes(query);
-        const matchBorrower = item.borrower_name?.toLowerCase().includes(query) ?? false;
-        const matchDesc = item.description?.toLowerCase().includes(query) ?? false;
-        return matchLocation || matchBorrower || matchDesc;
-      }
-
-      return true;
-    });
-  }, [items, selectedCategory, searchQuery]);
+    return items.filter((item) => item.category === selectedCategory);
+  }, [items, selectedCategory]);
 
   // Actions
   const handleReturnSubmit = async (itemId: string, note?: string) => {
@@ -119,6 +107,16 @@ export default function HomePage() {
       addNotification("반납 완료", `'${item?.location || "물품"}'이(가) 정상 반납되었습니다.`, "RETURN");
     } else {
       alert("반납 처리에 실패했습니다.");
+    }
+  };
+
+  const handleEditSubmit = async (itemId: string, updatedData: Partial<Item>) => {
+    const success = await InventoryService.editItem(itemId, updatedData);
+    if (success) {
+      await loadData();
+      addNotification("수정 완료", "물품 정보가 수정되었습니다.", "INFO");
+    } else {
+      alert("수정에 실패했습니다.");
     }
   };
 
@@ -139,6 +137,7 @@ export default function HomePage() {
       borrower_name: itemData.borrower_name || null,
       loaned_at: itemData.loaned_at || null,
       expected_return_date: itemData.expected_return_date || null,
+      returned_at: null,
     } as any);
 
     if (created) {
@@ -149,16 +148,8 @@ export default function HomePage() {
     }
   };
 
-  const handleDeleteItem = async (itemId: string) => {
-    const success = await InventoryService.deleteItem(itemId);
-    if (success) {
-      await loadData();
-      addNotification("삭제 완료", "해당 항목이 삭제되었습니다.", "INFO");
-    }
-  };
-
   const handleResetData = async () => {
-    if (confirm("기본 샘플 데이터로 복구하시겠습니까?")) {
+    if (confirm("모든 데이터를 기본 샘플 데이터로 복구하시겠습니까?")) {
       await InventoryService.resetData();
       await loadData();
       addNotification("초기화 완료", "기본 데이터로 복구되었습니다.", "INFO");
@@ -167,31 +158,8 @@ export default function HomePage() {
 
   return (
     <div className="app-container">
-      {/* App Header (sp-blond style) */}
+      {/* App Header (sp-blond style with live clock) */}
       <Header onRefresh={() => loadData()} />
-
-      {/* Sub Navigation Bar (Search Box) */}
-      <div className="px-5 py-2 bg-[#f8fafc] border-b border-[#d1d1d1] flex items-center justify-end gap-3 shrink-0">
-        {/* Search Box */}
-        <div className="relative w-72">
-          <Search className="w-3.5 h-3.5 text-[#94a3b8] absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="설치 장소, 대여자, 비고 검색..."
-            className="w-full pl-8 pr-7 py-1.5 bg-white border border-[#d1d1d1] rounded-md text-xs focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition placeholder:text-[#94a3b8]"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#94a3b8] hover:text-[#475569]"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Main Content Area (Sidebar + Spreadsheet) */}
       <div className="flex flex-1 overflow-hidden">
@@ -211,13 +179,14 @@ export default function HomePage() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-2">
                 <div className="w-8 h-8 border-2 border-[#217346] border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-xs text-[#666666]">데이터를 불러오는 중입니다...</p>
+                <p className="text-[0.85rem] text-[#666666]">데이터를 불러오는 중입니다...</p>
               </div>
             </div>
           ) : (
             <RosterTable
               items={filteredItems}
               onReturn={(i) => setSelectedReturnItem(i)}
+              onEdit={(i) => setSelectedEditItem(i)}
             />
           )}
 
@@ -233,6 +202,13 @@ export default function HomePage() {
         isOpen={Boolean(selectedReturnItem)}
         onClose={() => setSelectedReturnItem(null)}
         onSubmit={handleReturnSubmit}
+      />
+
+      <EditModal
+        item={selectedEditItem}
+        isOpen={Boolean(selectedEditItem)}
+        onClose={() => setSelectedEditItem(null)}
+        onSubmit={handleEditSubmit}
       />
 
       {/* Realtime Toast Notifications */}

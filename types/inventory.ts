@@ -1,4 +1,4 @@
-﻿export type ItemStatus = 'AVAILABLE' | 'LOANED';
+export type ItemStatus = 'AVAILABLE' | 'LOANED';
 
 export interface Item {
   id: string;
@@ -11,6 +11,7 @@ export interface Item {
   borrower_contact: string | null;
   loaned_at: string | null;
   expected_return_date: string | null;
+  returned_at?: string | null;
   description: string | null;
   created_at: string;
 }

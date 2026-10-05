@@ -83,12 +83,15 @@ export async function POST(request: Request) {
       }
 
       const previousBorrower = target.borrower_name || "담당자";
-      const timestamp = new Date().toISOString();
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${year}-${month}-${day}`;
+      const timestamp = now.toISOString();
+
       target.status = "AVAILABLE";
-      target.borrower_name = null;
-      target.borrower_contact = null;
-      target.loaned_at = null;
-      target.expected_return_date = null;
+      target.returned_at = todayStr; // 반납 처리한 오늘 날짜 기록!
 
       store.logs.unshift({
         id: "log-" + Date.now(),
@@ -102,6 +105,26 @@ export async function POST(request: Request) {
 
       store.version = Date.now();
       return NextResponse.json({ success: true, version: store.version });
+    }
+
+    if (action === "EDIT") {
+      const { itemId, data } = payload;
+      const target = store.items.find((i) => i.id === itemId);
+      if (!target) {
+        return NextResponse.json({ success: false, error: "Item not found" }, { status: 404 });
+      }
+
+      if (data.location !== undefined) target.location = data.location;
+      if (data.borrower_name !== undefined) target.borrower_name = data.borrower_name;
+      if (data.loaned_at !== undefined) target.loaned_at = data.loaned_at;
+      if (data.expected_return_date !== undefined) target.expected_return_date = data.expected_return_date;
+      if (data.returned_at !== undefined) target.returned_at = data.returned_at;
+      if (data.description !== undefined) target.description = data.description;
+      if (data.category !== undefined) target.category = data.category;
+      if (data.status !== undefined) target.status = data.status;
+
+      store.version = Date.now();
+      return NextResponse.json({ success: true, item: target, version: store.version });
     }
 
     if (action === "ADD") {
