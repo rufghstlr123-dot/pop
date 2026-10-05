@@ -62,8 +62,8 @@ export default function HomePage() {
 
       if (showNotificationOnChange) {
         addNotification(
-          "동기화 완료",
-          "변경사항이 반영되었습니다.",
+          "실시간 동기화 완료",
+          "다른 사용자의 변경사항이 실시간으로 반영되었습니다.",
           "INFO"
         );
       }
@@ -188,8 +188,31 @@ export default function HomePage() {
 
   return (
     <div className="app-container">
-      {/* App Header */}
+      {/* App Header (sp-blond style) */}
       <Header onRefresh={() => loadData()} />
+
+      {/* Sub Navigation Bar (Search Box) */}
+      <div className="px-5 py-2 bg-[#f8fafc] border-b border-[#d1d1d1] flex items-center justify-end gap-3 shrink-0">
+        {/* Search Box */}
+        <div className="relative w-72">
+          <Search className="w-3.5 h-3.5 text-[#94a3b8] absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="설치 장소, 대여자, 비고 검색..."
+            className="w-full pl-8 pr-7 py-1.5 bg-white border border-[#d1d1d1] rounded-md text-xs focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition placeholder:text-[#94a3b8]"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#94a3b8] hover:text-[#475569]"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Main Content Area (Sidebar + Spreadsheet) */}
       <div className="flex flex-1 overflow-hidden">
@@ -205,28 +228,6 @@ export default function HomePage() {
 
         {/* Right Main Table Viewer */}
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
-          {/* Search Bar */}
-          <div className="px-4 py-2 bg-[#f8fafc] border-b border-[#d1d1d1] shrink-0">
-            <div className="relative w-full max-w-sm">
-              <Search className="w-3.5 h-3.5 text-[#94a3b8] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="설치 장소, 대여자, 비고 검색..."
-                className="w-full pl-8 pr-7 py-1.5 bg-white border border-[#d1d1d1] rounded-md text-xs focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition placeholder:text-[#94a3b8]"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#94a3b8] hover:text-[#475569]"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-2">
@@ -242,6 +243,11 @@ export default function HomePage() {
               onDelete={(id) => handleDeleteItem(id)}
             />
           )}
+
+          {/* Bottom Bar */}
+          <div className="px-4 py-1.5 bg-[#f3f3f3] border-t border-[#d1d1d1] flex items-center justify-end text-[11px] text-[#94a3b8] shrink-0 font-mono">
+            THEHYUNDAI RENTAL
+          </div>
         </main>
       </div>
 
