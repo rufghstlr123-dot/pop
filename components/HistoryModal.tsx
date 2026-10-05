@@ -1,46 +1,50 @@
 "use client";
 import React from "react";
-import { X, History, ArrowRight, RotateCcw, User, Clock } from "lucide-react";
-import { RentalLog } from "@/types/inventory";
+import { X, History, Edit2, CheckCircle2 } from "lucide-react";
+import { Item } from "@/types/inventory";
 
 interface HistoryModalProps {
-  logs: RentalLog[];
+  items: Item[];
   isOpen: boolean;
   onClose: () => void;
+  onEdit: (item: Item) => void;
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString: string | null | undefined): string {
+  if (!dateString) return "-";
   try {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
     const d = new Date(dateString);
-    const month = d.getMonth() + 1;
-    const date = d.getDate();
-    const hours = d.getHours().toString().padStart(2, "0");
-    const minutes = d.getMinutes().toString().padStart(2, "0");
-    return `${month}월 ${date}일 ${hours}:${minutes}`;
+    if (isNaN(d.getTime())) return dateString;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   } catch {
     return dateString;
   }
 }
 
 export const HistoryModal: React.FC<HistoryModalProps> = ({
-  logs,
+  items,
   isOpen,
   onClose,
+  onEdit,
 }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px]">
-      <div className="bg-white border border-[#d1d1d1] rounded-xl w-full max-w-2xl max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-scale-up">
+      <div className="bg-white border border-[#d1d1d1] rounded-xl w-full max-w-4xl max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-scale-up">
         {/* Header */}
         <div className="bg-[#217346] text-white px-5 py-3.5 flex items-center justify-between shrink-0">
           <div>
-            <h2 className="text-base font-bold flex items-center gap-2">
+            <h2 className="text-[1rem] font-bold flex items-center gap-2">
               <History className="w-4 h-4" />
-              대여 & 반납 실시간 기록
+              과거 반납 완료 기록
             </h2>
-            <p className="text-[11px] text-[#e6f2ec] mt-0.5">
-              실시간으로 처리된 모든 물품 대여 및 반납 히스토리입니다.
+            <p className="text-[0.75rem] text-[#e6f2ec] mt-0.5">
+              정상 반납 처리 완료된 과거 대여 이력 목록입니다. (총 {items.length}건)
             </p>
           </div>
           <button
@@ -51,68 +55,97 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
           </button>
         </div>
 
-        {/* List */}
-        <div className="p-4 overflow-y-auto flex-1 divide-y divide-[#e2e8f0] text-xs">
-          {logs.length === 0 ? (
-            <div className="text-center py-10 text-[#94a3b8]">
-              <History className="w-10 h-10 mx-auto mb-2 opacity-40" />
-              <p className="font-bold">기록된 대여/반납 이력이 없습니다.</p>
+        {/* Content Table */}
+        <div className="overflow-x-auto overflow-y-auto flex-1 bg-white">
+          {items.length === 0 ? (
+            <div className="text-center py-16 text-[#94a3b8]">
+              <CheckCircle2 className="w-10 h-10 mx-auto mb-2 opacity-40 text-[#217346]" />
+              <p className="font-bold text-[0.9rem] text-[#333333]">반납 완료된 과거 이력이 없습니다.</p>
+              <p className="text-[0.8rem] text-[#94a3b8] mt-1">대시보드에서 물품을 [반납] 처리하면 이곳에 보관됩니다.</p>
             </div>
           ) : (
-            logs.map((log) => {
-              const isBorrow = log.action === "BORROW";
-              return (
-                <div key={log.id} className="py-3 first:pt-0 last:pb-0 flex items-start gap-3">
-                  <div
-                    className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
-                      isBorrow
-                        ? "bg-[#ffedd5] text-[#c2410c] border border-[#fed7aa]"
-                        : "bg-[#e6f2ec] text-[#217346] border border-[#bbf7d0]"
-                    }`}
-                  >
-                    {isBorrow ? (
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    ) : (
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          isBorrow
-                            ? "bg-[#ffedd5] text-[#c2410c]"
-                            : "bg-[#e6f2ec] text-[#217346]"
-                        }`}
+            <table className="w-full text-left border-collapse table-fixed min-w-[850px] text-[0.85rem]">
+              <colgroup>
+                <col className="w-[90px]" />
+                <col className="w-[180px]" />
+                <col className="w-[110px]" />
+                <col className="w-[110px]" />
+                <col className="w-[110px]" />
+                <col className="w-[110px]" />
+                <col className="w-auto" />
+                <col className="w-[80px]" />
+              </colgroup>
+              <thead className="bg-[#f3f3f3] sticky top-0 z-20 border-b-2 border-[#bbbbbb]">
+                <tr>
+                  <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
+                    카테고리
+                  </th>
+                  <th className="py-2.5 px-3.5 font-bold text-[#333333] border-r border-[#d1d1d1] text-[0.8rem]">
+                    설치 장소
+                  </th>
+                  <th className="py-2.5 px-3.5 font-bold text-[#333333] border-r border-[#d1d1d1] text-[0.8rem]">
+                    대여자
+                  </th>
+                  <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
+                    대여 일자
+                  </th>
+                  <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
+                    반납 예정 일자
+                  </th>
+                  <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
+                    반납 일자
+                  </th>
+                  <th className="py-2.5 px-3.5 font-bold text-[#333333] border-r border-[#d1d1d1] text-[0.8rem]">
+                    비고
+                  </th>
+                  <th className="py-2.5 px-2 font-bold text-[#333333] text-center text-[0.8rem]">
+                    관리
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#d1d1d1]">
+                {items.map((item) => (
+                  <tr key={item.id} className="hover:bg-[#f8fafc] transition-colors">
+                    <td className="py-2 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded text-[0.75rem] font-semibold border bg-[#f1f5f9] text-[#475569] border-[#e2e8f0]">
+                        {item.category}
+                      </span>
+                    </td>
+                    <td className="py-2 px-3.5 border-r border-[#d1d1d1] font-semibold text-[#1e293b] truncate" title={item.location}>
+                      {item.location}
+                    </td>
+                    <td className="py-2 px-3.5 border-r border-[#d1d1d1] text-[#333333] truncate">
+                      {item.borrower_name || "-"}
+                    </td>
+                    <td className="py-2 px-3 border-r border-[#d1d1d1] text-center font-mono text-[0.8rem] text-[#64748b]">
+                      {formatDate(item.loaned_at)}
+                    </td>
+                    <td className="py-2 px-3 border-r border-[#d1d1d1] text-center font-mono text-[0.8rem] text-[#64748b]">
+                      {formatDate(item.expected_return_date)}
+                    </td>
+                    <td className="py-2 px-3 border-r border-[#d1d1d1] text-center font-mono text-[0.8rem] font-bold text-[#217346]">
+                      {formatDate(item.returned_at)}
+                    </td>
+                    <td className="py-2 px-3.5 border-r border-[#d1d1d1] text-[#475569] truncate" title={item.description || "-"}>
+                      {item.description || "-"}
+                    </td>
+                    <td className="py-2 px-2 text-center whitespace-nowrap">
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onEdit(item);
+                        }}
+                        className="px-2 py-1 rounded bg-white hover:bg-slate-100 text-[#333333] border border-[#d1d1d1] text-[0.75rem] font-semibold transition inline-flex items-center gap-0.5 shadow-2xs"
+                        title="이력 수정"
                       >
-                        {isBorrow ? "대여" : "반납 완료"}
-                      </span>
-                      <span className="text-[11px] text-[#94a3b8] flex items-center gap-1 font-mono">
-                        <Clock className="w-3 h-3" />
-                        {formatDate(log.timestamp)}
-                      </span>
-                    </div>
-
-                    <h4 className="font-bold text-xs text-[#1e293b] mt-1">
-                      {log.item_name}
-                    </h4>
-
-                    <div className="flex items-center gap-2 text-[11px] text-[#64748b] mt-0.5">
-                      <span className="flex items-center gap-1 font-medium text-[#333333]">
-                        <User className="w-3 h-3 text-[#94a3b8]" />
-                        {log.user_name}
-                      </span>
-                      {log.note && (
-                        <span className="text-[#64748b] bg-[#f1f5f9] px-1.5 py-0.5 rounded truncate max-w-sm">
-                          {log.note}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+                        <Edit2 className="w-2.5 h-2.5 text-[#64748b]" />
+                        <span>수정</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
 
@@ -120,7 +153,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         <div className="p-3 bg-[#f8fafc] border-t border-[#d1d1d1] text-right">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-md border border-[#d1d1d1] bg-white text-[#333333] text-xs font-semibold hover:bg-slate-100 transition"
+            className="px-4 py-1.5 rounded-md border border-[#d1d1d1] bg-white text-[#333333] text-[0.85rem] font-semibold hover:bg-slate-100 transition"
           >
             닫기
           </button>

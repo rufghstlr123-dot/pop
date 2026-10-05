@@ -8,12 +8,13 @@ import { Sidebar } from "@/components/Sidebar";
 import { RosterTable } from "@/components/RosterTable";
 import { ReturnModal } from "@/components/ReturnModal";
 import { EditModal } from "@/components/EditModal";
+import { HistoryModal } from "@/components/HistoryModal";
 import {
   RealtimeNotification,
   NotificationMessage,
 } from "@/components/RealtimeNotification";
 
-const CATEGORIES = ["A2 POP", "A3 POP", "철제배너"];
+const CATEGORIES = ["전체", "A2 POP", "A3 POP", "철제배너"];
 
 export default function HomePage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -21,11 +22,12 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   // Filters & State
-  const [selectedCategory, setSelectedCategory] = useState("A2 POP");
+  const [selectedCategory, setSelectedCategory] = useState("전체");
 
   // Modals
   const [selectedReturnItem, setSelectedReturnItem] = useState<Item | null>(null);
   const [selectedEditItem, setSelectedEditItem] = useState<Item | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
@@ -86,17 +88,26 @@ export default function HomePage() {
 
   // Statistics for current selected category
   const categoryStats: InventoryStats = useMemo(() => {
-    const catItems = items.filter((i) => i.category === selectedCategory);
-    const total = catItems.length;
-    const available = catItems.filter((i) => i.status === "AVAILABLE").length;
-    const loaned = catItems.filter((i) => i.status === "LOANED").length;
+    const targetItems = selectedCategory === "전체" ? items : items.filter((i) => i.category === selectedCategory);
+    const total = targetItems.length;
+    const available = targetItems.filter((i) => i.status === "AVAILABLE").length;
+    const loaned = targetItems.filter((i) => i.status === "LOANED").length;
     return { total, available, loaned };
   }, [items, selectedCategory]);
 
-  // Filter items by category
+  // Filter items: Only currently loaned items appear in the main dashboard table!
   const filteredItems = useMemo(() => {
-    return items.filter((item) => item.category === selectedCategory);
+    return items.filter((item) => {
+      if (item.status !== "LOANED") return false;
+      if (selectedCategory === "전체") return true;
+      return item.category === selectedCategory;
+    });
   }, [items, selectedCategory]);
+
+  // Past returned items for HistoryModal
+  const returnedItems = useMemo(() => {
+    return items.filter((item) => item.status === "AVAILABLE" && Boolean(item.returned_at || item.borrower_name));
+  }, [items]);
 
   // Actions
   const handleReturnSubmit = async (itemId: string, note?: string) => {
@@ -104,7 +115,7 @@ export default function HomePage() {
     if (success) {
       await loadData();
       const item = items.find((i) => i.id === itemId);
-      addNotification("반납 완료", `'${item?.location || "물품"}'이(가) 정상 반납되었습니다.`, "RETURN");
+      addNotification("반납 완료", `'${item?.location || "물품"}'이(가) 정상 반납되었습니다. [과거 반납 기록]에서 확인 가능합니다.`, "RETURN");
     } else {
       alert("반납 처리에 실패했습니다.");
     }
@@ -142,7 +153,7 @@ export default function HomePage() {
 
     if (created) {
       await loadData();
-      addNotification("신규 등록", `'${itemData.location}'에 ${itemData.category}이(가) 등록되었습니다.`, "ADD");
+      addNotification("신규 등록", `'${itemData.location}'에 ${itemData.category} 대여가 등록되었습니다.`, "ADD");
     } else {
       alert("등록에 실패했습니다.");
     }
@@ -158,8 +169,11 @@ export default function HomePage() {
 
   return (
     <div className="app-container">
-      {/* App Header (sp-blond style with live clock) */}
-      <Header onRefresh={() => loadData()} />
+      {/* App Header (sp-blond style with live clock and history modal trigger) */}
+      <Header
+        onRefresh={() => loadData()}
+        onOpenHistory={() => setIsHistoryModalOpen(true)}
+      />
 
       {/* Main Content Area (Sidebar + Spreadsheet) */}
       <div className="flex flex-1 overflow-hidden">
@@ -173,7 +187,7 @@ export default function HomePage() {
           onResetData={handleResetData}
         />
 
-        {/* Right Main Table Viewer */}
+        {/* Right Main Table Viewer (Only Currently LOANED items) */}
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
@@ -209,6 +223,13 @@ export default function HomePage() {
         isOpen={Boolean(selectedEditItem)}
         onClose={() => setSelectedEditItem(null)}
         onSubmit={handleEditSubmit}
+      />
+
+      <HistoryModal
+        items={returnedItems}
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        onEdit={(item) => setSelectedEditItem(item)}
       />
 
       {/* Realtime Toast Notifications */}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Loader2, ChevronDown } from "lucide-react";
 import { InventoryStats } from "@/types/inventory";
 
@@ -42,13 +42,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAddItem,
   onResetData,
 }) => {
-  const [category, setCategory] = useState(selectedCategory === "전체" ? "A2 POP" : selectedCategory);
+  const registrableCategories = categories.filter((c) => c !== "전체");
+  const [category, setCategory] = useState(
+    selectedCategory === "전체" ? (registrableCategories[0] || "A2 POP") : selectedCategory
+  );
   const [borrower, setBorrower] = useState("");
   const [location, setLocation] = useState("");
   const [loanedAt, setLoanedAt] = useState(getTodayString);
   const [expectedReturnDate, setExpectedReturnDate] = useState("");
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (selectedCategory !== "전체") {
+      setCategory(selectedCategory);
+    }
+  }, [selectedCategory]);
 
   const handleLoanedAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLoanedAt(formatDateInput(e.target.value));
@@ -105,7 +114,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={cat}
               onClick={() => {
                 onSelectCategory(cat);
-                setCategory(cat);
               }}
               className={`w-full px-3 py-2 text-[0.85rem] font-semibold rounded-md border text-left transition-all ${
                 isActive
@@ -129,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-3.5 flex-1 overflow-y-auto space-y-2.5">
         <form onSubmit={handleSubmit} className="space-y-2.5">
-          {/* Category Dropdown (Custom styled arrow with natural spacing) */}
+          {/* Category Dropdown */}
           <div className="space-y-1">
             <label className="block text-[0.8rem] font-semibold text-[#333333]">
               카테고리 <span className="text-red-500">*</span>
@@ -140,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full pl-2.5 pr-8 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white appearance-none focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition cursor-pointer"
               >
-                {categories.map((cat) => (
+                {registrableCategories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
                   </option>
@@ -150,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          {/* 설치 장소 */}
+          {/* 설치 장소 (예시 문구 제거) */}
           <div className="space-y-1">
             <label className="block text-[0.8rem] font-semibold text-[#333333]">
               설치 장소 <span className="text-red-500">*</span>
@@ -160,12 +168,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               required
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="예: 1F 정문 앞 / B1 대행사장"
+              placeholder=""
               className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
             />
           </div>
 
-          {/* 대여자 */}
+          {/* 대여자 (예시 문구 제거) */}
           <div className="space-y-1">
             <label className="block text-[0.8rem] font-semibold text-[#333333]">
               대여자
@@ -174,12 +182,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="text"
               value={borrower}
               onChange={(e) => setBorrower(e.target.value)}
-              placeholder="예: 이지은 매니저"
+              placeholder=""
               className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
             />
           </div>
 
-          {/* 대여 일자 & 반납 예정 일자 */}
+          {/* 대여 일자 & 반납 예정 일자 (예시 문구 제거) */}
           <div className="grid grid-cols-1 gap-2 pt-0.5">
             <div className="space-y-1">
               <label className="block text-[0.8rem] font-semibold text-[#333333]">
@@ -190,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 maxLength={10}
                 value={loanedAt}
                 onChange={handleLoanedAtChange}
-                placeholder="YYYY-MM-DD (예: 20261006)"
+                placeholder="YYYY-MM-DD"
                 className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
               />
             </div>
@@ -204,13 +212,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 maxLength={10}
                 value={expectedReturnDate}
                 onChange={handleExpectedReturnDateChange}
-                placeholder="YYYY-MM-DD (예: 20261008)"
+                placeholder="YYYY-MM-DD"
                 className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
               />
             </div>
           </div>
 
-          {/* 비고 */}
+          {/* 비고 (예시 문구 제거) */}
           <div className="space-y-1">
             <label className="block text-[0.8rem] font-semibold text-[#333333]">
               비고
@@ -219,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="예: 주말 사은행사 안내 고지용"
+              placeholder=""
               className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition resize-none"
             />
           </div>
