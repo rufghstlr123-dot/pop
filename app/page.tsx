@@ -7,6 +7,7 @@ import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { RosterTable } from "@/components/RosterTable";
 import { EditModal } from "@/components/EditModal";
+import { ReBorrowModal } from "@/components/ReBorrowModal";
 import {
   RealtimeNotification,
   NotificationMessage,
@@ -25,6 +26,7 @@ export default function HomePage() {
 
   // Modals
   const [selectedEditItem, setSelectedEditItem] = useState<Item | null>(null);
+  const [selectedReBorrowItem, setSelectedReBorrowItem] = useState<Item | null>(null);
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
@@ -102,10 +104,8 @@ export default function HomePage() {
 
       // Status filter
       if (selectedCategory === "전체") {
-        // "전체" category always shows active loans
         return item.status === "LOANED";
       } else {
-        // Individual category toggle
         if (viewMode === "RETURNED") {
           return item.status === "AVAILABLE" && Boolean(item.returned_at || item.borrower_name);
         } else {
@@ -126,6 +126,38 @@ export default function HomePage() {
       addNotification("반납 완료", `'${item.location}' 물품이 정상 반납되었습니다.`, "RETURN");
     } else {
       alert("반납 처리에 실패했습니다.");
+    }
+  };
+
+  // Re-borrow: Start new rental from returned record
+  const handleReBorrowSubmit = async (
+    itemId: string,
+    data: {
+      borrower_name: string;
+      loaned_at: string;
+      expected_return_date?: string;
+      description?: string;
+    }
+  ) => {
+    const success = await InventoryService.editItem(itemId, {
+      status: "LOANED",
+      borrower_name: data.borrower_name,
+      loaned_at: data.loaned_at,
+      expected_return_date: data.expected_return_date || null,
+      returned_at: null,
+      description: data.description || null,
+    });
+    if (success) {
+      await loadData();
+      // Switch view back to CURRENT loans so user immediately sees newly activated loan
+      setViewMode("CURRENT");
+      addNotification(
+        "대여 시작",
+        `'${data.borrower_name}'님에게 대여가 다시 시작되었습니다.`,
+        "BORROW"
+      );
+    } else {
+      alert("대여 처리에 실패했습니다.");
     }
   };
 
@@ -247,6 +279,7 @@ export default function HomePage() {
               viewMode={viewMode}
               onReturn={handleDirectReturn}
               onEdit={(i) => setSelectedEditItem(i)}
+              onReBorrow={(i) => setSelectedReBorrowItem(i)}
             />
           )}
 
@@ -262,6 +295,14 @@ export default function HomePage() {
         isOpen={Boolean(selectedEditItem)}
         onClose={() => setSelectedEditItem(null)}
         onSubmit={handleEditSubmit}
+      />
+
+      {/* Re-Borrow Modal */}
+      <ReBorrowModal
+        item={selectedReBorrowItem}
+        isOpen={Boolean(selectedReBorrowItem)}
+        onClose={() => setSelectedReBorrowItem(null)}
+        onSubmit={handleReBorrowSubmit}
       />
 
       {/* Realtime Toast Notifications */}

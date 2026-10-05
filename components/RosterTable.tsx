@@ -8,6 +8,7 @@ interface RosterTableProps {
   viewMode?: "CURRENT" | "RETURNED";
   onReturn: (item: Item) => void;
   onEdit: (item: Item) => void;
+  onReBorrow?: (item: Item) => void;
 }
 
 function formatDate(dateString: string | null | undefined): string {
@@ -30,6 +31,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
   viewMode = "CURRENT",
   onReturn,
   onEdit,
+  onReBorrow,
 }) => {
   if (items.length === 0) {
     const isReturnedView = viewMode === "RETURNED";
@@ -159,9 +161,14 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                         <span>반납</span>
                       </button>
                     ) : (
-                      <span className="inline-block px-2 py-0.5 rounded text-[0.8rem] font-bold bg-[#f1f5f9] text-[#64748b] border border-[#e2e8f0]">
-                        반납 완료
-                      </span>
+                      <button
+                        onClick={() => onReBorrow && onReBorrow(item)}
+                        className="px-2 py-0.5 rounded text-[0.8rem] font-bold bg-[#f1f5f9] hover:bg-[#217346] text-[#475569] hover:text-white border border-[#cbd5e1] hover:border-[#217346] transition-all inline-flex items-center gap-1 shadow-2xs group cursor-pointer"
+                        title="반납 완료된 상태입니다. 클릭 시 다시 대여를 시작합니다."
+                      >
+                        <RotateCcw className="w-2.5 h-2.5 text-[#217346] group-hover:text-white transition-colors" />
+                        <span>반납 완료</span>
+                      </button>
                     )}
 
                     <button
