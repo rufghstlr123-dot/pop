@@ -218,7 +218,6 @@ export default function HomePage() {
             <RosterTable
               items={filteredItems}
               onReturn={(i) => setSelectedReturnItem(i)}
-              onDelete={(id) => handleDeleteItem(id)}
             />
           )}
 
