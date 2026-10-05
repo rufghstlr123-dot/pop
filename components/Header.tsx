@@ -8,14 +8,11 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
   return (
-    <header className="px-5 py-3.5 bg-white border-b border-[#d1d1d1] flex items-center justify-between gap-3 shrink-0">
-      {/* Brand Title */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded bg-[#217346] flex items-center justify-center text-white font-bold text-sm shadow-sm font-['Outfit',sans-serif]">
-          H
-        </div>
-        <h1 className="font-['Outfit',sans-serif] text-base sm:text-lg font-bold text-[#217346] tracking-tight leading-tight">
-          THEHYUNDAI RENTAL : 판매기획팀 POP 대여
+    <header className="px-6 py-3 bg-white border-b border-[#d1d1d1] flex items-center justify-between gap-3 shrink-0">
+      {/* Brand Title (Exact match to sp-blond .header-left h1) */}
+      <div className="flex items-center">
+        <h1 className="font-['Outfit',sans-serif] text-[1.25rem] font-bold text-[#217346] tracking-tight leading-tight">
+          판매기획팀 POP 대여
         </h1>
       </div>
 

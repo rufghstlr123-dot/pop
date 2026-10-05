@@ -124,23 +124,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* 2. New Item Registration Form */}
       <div className="px-3.5 py-2.5 bg-[#f3f3f3] border-b border-[#d1d1d1] flex items-center justify-between">
-        <h3 className="text-xs font-bold text-[#217346] uppercase tracking-wider flex items-center gap-1">
+        <h3 className="text-[0.85rem] font-bold text-[#217346] uppercase tracking-wider flex items-center gap-1">
           <Plus className="w-3.5 h-3.5" />
           신규 물품 간편 등록
         </h3>
       </div>
 
-      <div className="p-3 flex-1 overflow-y-auto space-y-2.5">
+      <div className="p-3.5 flex-1 overflow-y-auto space-y-2.5">
         <form onSubmit={handleSubmit} className="space-y-2.5">
           {/* Category Dropdown */}
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-[#333333]">
+            <label className="block text-[0.8rem] font-semibold text-[#333333]">
               카테고리 <span className="text-red-500">*</span>
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition cursor-pointer"
+              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition cursor-pointer"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -152,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* 설치 장소 */}
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-[#333333]">
+            <label className="block text-[0.8rem] font-semibold text-[#333333]">
               설치 장소 <span className="text-red-500">*</span>
             </label>
             <input
@@ -161,13 +161,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="예: 1F 정문 앞 / B1 대행사장"
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
             />
           </div>
 
           {/* 대여자 */}
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-[#333333]">
+            <label className="block text-[0.8rem] font-semibold text-[#333333]">
               대여자
             </label>
             <input
@@ -175,15 +175,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               value={borrower}
               onChange={(e) => setBorrower(e.target.value)}
               placeholder="예: 이지은 매니저"
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
             />
           </div>
 
           {/* 대여일시 & 반납예정일 (yyyy-mm-dd format with 8-digit auto format) */}
           <div className="grid grid-cols-1 gap-2 pt-0.5">
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-[#333333]">
-                대여일시
+              <label className="block text-[0.8rem] font-semibold text-[#333333]">
+                대여 일시
               </label>
               <input
                 type="text"
@@ -191,13 +191,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 value={loanedAt}
                 onChange={handleLoanedAtChange}
                 placeholder="YYYY-MM-DD (예: 20261006)"
-                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[11px] font-bold text-[#333333]">
-                반납예정일
+              <label className="block text-[0.8rem] font-semibold text-[#333333]">
+                반납 일시
               </label>
               <input
                 type="text"
@@ -205,14 +205,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 value={expectedReturnDate}
                 onChange={handleExpectedReturnDateChange}
                 placeholder="YYYY-MM-DD (예: 20261008)"
-                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
               />
             </div>
           </div>
 
           {/* 비고 */}
           <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-[#333333]">
+            <label className="block text-[0.8rem] font-semibold text-[#333333]">
               비고
             </label>
             <textarea
@@ -220,7 +220,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="예: 주말 사은행사 안내 고지용"
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-xs bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition resize-none"
+              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition resize-none"
             />
           </div>
 
@@ -228,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2 bg-[#217346] hover:bg-[#185a37] active:bg-[#0f3d24] text-white rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 mt-1"
+            className="w-full py-2 bg-[#217346] hover:bg-[#185a37] active:bg-[#0f3d24] text-white rounded-md text-[0.85rem] font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 mt-1"
           >
             {isSubmitting ? (
               <>
@@ -247,7 +247,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="pt-2 border-t border-[#d1d1d1] text-center">
           <button
             onClick={onResetData}
-            className="text-[11px] text-[#666666] hover:text-[#217346] underline"
+            className="text-[0.8rem] text-[#666666] hover:text-[#217346] underline"
           >
             샘플 데이터로 초기화
           </button>

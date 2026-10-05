@@ -222,8 +222,7 @@ export default function HomePage() {
           )}
 
           {/* Bottom Bar */}
-          <div className="px-4 py-1.5 bg-[#f3f3f3] border-t border-[#d1d1d1] flex items-center justify-end text-[11px] text-[#94a3b8] shrink-0 font-mono">
-            THEHYUNDAI RENTAL
+          <div className="px-4 py-1.5 bg-[#f3f3f3] border-t border-[#d1d1d1] flex items-center justify-end text-[0.8rem] text-[#94a3b8] shrink-0 font-mono min-h-[28px]">
           </div>
         </main>
       </div>
