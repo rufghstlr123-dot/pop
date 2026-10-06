@@ -77,23 +77,23 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         {/* Fixed Column Width Definitions for Uniform Display across all categories */}
         <colgroup>
           <col className="w-[100px]" />
-          <col className="w-[220px]" />
-          <col className="w-[120px]" />
+          <col className="w-[200px]" />
+          <col className="w-[100px]" />
           <col className="w-[125px]" />
           <col className="w-[130px]" />
           <col className="w-[125px]" />
           <col className="w-auto" />
-          <col className="w-[185px]" />
+          <col className="w-[250px]" />
         </colgroup>
         <thead className="bg-[#f3f3f3] sticky top-0 z-20 border-b-2 border-[#bbbbbb]">
           <tr>
             <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               카테고리
             </th>
-            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-[0.8rem]">
+            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               설치 장소
             </th>
-            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-[0.8rem]">
+            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               대여자
             </th>
             <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
@@ -105,7 +105,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               반납 일자
             </th>
-            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-[0.8rem]">
+            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               비고
             </th>
             <th className="py-2.5 px-3 font-bold text-[#333333] text-center text-[0.8rem]">
