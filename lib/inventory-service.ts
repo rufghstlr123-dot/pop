@@ -1,78 +1,42 @@
 import { Item, RentalLog } from "@/types/inventory";
-import { supabase, isSupabaseConfigured } from "./supabase";
+import { db, ref, get, set, update, push, onValue, off } from "./firebase";
 import { INITIAL_ITEMS, INITIAL_LOGS } from "./seed-data";
-
-const BROADCAST_CHANNEL_NAME = "hyundai_inventory_sync";
-
-function getBroadcastChannel(): BroadcastChannel | null {
-  if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-    try {
-      return new BroadcastChannel(BROADCAST_CHANNEL_NAME);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
-
-let currentServerVersion = 0;
 
 export const InventoryService = {
   isCloudSync(): boolean {
-    return isSupabaseConfigured;
+    return true; // Now always true because we use Firebase
   },
 
   async getItems(): Promise<Item[]> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from("items")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        return data as Item[];
-      }
-    }
-
-    // 서버 API 동기화 (다중 브라우저, 시크릿 모드, 모바일 등 모든 접속자 완벽 공유)
     try {
-      const res = await fetch("/api/data", { cache: "no-store" });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.version) currentServerVersion = json.version;
-        if (json.items) return json.items;
+      const snapshot = await get(ref(db, "items"));
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        return Object.values(data) as Item[];
       }
     } catch (e) {
-      console.warn("Server API fetch error, fallback to seed:", e);
+      console.error("Firebase fetch items error:", e);
     }
-
     return INITIAL_ITEMS;
   },
 
   async getLogs(): Promise<RentalLog[]> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from("rental_logs")
-        .select("*")
-        .order("timestamp", { ascending: false })
-        .limit(50);
-
-      if (!error && data) {
-        return data as RentalLog[];
-      }
-    }
-
     try {
-      const res = await fetch("/api/data", { cache: "no-store" });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.logs) return json.logs;
+      const snapshot = await get(ref(db, "rental_logs"));
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        // Sort by timestamp desc
+        const logs = Object.values(data) as RentalLog[];
+        return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       }
     } catch (e) {
-      console.warn("Server API fetch error:", e);
+      console.error("Firebase fetch logs error:", e);
     }
-
     return INITIAL_LOGS;
+  },
+
+  async triggerUpdate() {
+    await set(ref(db, "last_updated"), Date.now());
   },
 
   async borrowItem(
@@ -82,145 +46,89 @@ export const InventoryService = {
     expectedReturnDate?: string,
     note?: string
   ): Promise<boolean> {
-    const loanedAt = new Date().toISOString();
+    try {
+      const loanedAt = new Date().toISOString();
 
-    if (isSupabaseConfigured && supabase) {
-      const { error: itemError } = await supabase
-        .from("items")
-        .update({
-          status: "LOANED",
-          borrower_name: borrowerName,
-          borrower_contact: borrowerContact || null,
-          loaned_at: loanedAt,
-          expected_return_date: expectedReturnDate || null,
-        })
-        .eq("id", itemId);
+      await update(ref(db, `items/${itemId}`), {
+        status: "LOANED",
+        borrower_name: borrowerName,
+        borrower_contact: borrowerContact || null,
+        loaned_at: loanedAt,
+        expected_return_date: expectedReturnDate || null,
+      });
 
-      if (itemError) {
-        console.error("Supabase borrow error:", itemError);
-        return false;
-      }
+      const itemSnap = await get(ref(db, `items/${itemId}`));
+      const itemName = itemSnap.exists() ? itemSnap.val().name : "알 수 없는 물품";
 
-      const { data: itemData } = await supabase
-        .from("items")
-        .select("name")
-        .eq("id", itemId)
-        .single();
-
-      await supabase.from("rental_logs").insert({
+      const newLogRef = push(ref(db, "rental_logs"));
+      await set(newLogRef, {
+        id: newLogRef.key,
         item_id: itemId,
-        item_name: itemData?.name || "알 수 없는 물품",
+        item_name: itemName,
         action: "BORROW",
         user_name: borrowerName,
         note: note || borrowerContact || null,
         timestamp: loanedAt,
       });
 
+      await this.triggerUpdate();
       return true;
-    }
-
-    // 서버 API 호출
-    try {
-      const res = await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "BORROW",
-          payload: { itemId, borrowerName, borrowerContact, expectedReturnDate, note },
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.version) currentServerVersion = json.version;
-        getBroadcastChannel()?.postMessage({ type: "SYNC_UPDATED" });
-        return true;
-      }
     } catch (e) {
-      console.error("Borrow API error:", e);
+      console.error("Borrow error:", e);
+      return false;
     }
-    return false;
   },
 
   async returnItem(itemId: string, note?: string): Promise<boolean> {
-    const timestamp = new Date().toISOString();
-
-    if (isSupabaseConfigured && supabase) {
-      const { data: currentItem, error: getErr } = await supabase
-        .from("items")
-        .select("name, borrower_name")
-        .eq("id", itemId)
-        .single();
-
-      if (getErr || !currentItem) {
-        console.error("Error finding item for return:", getErr);
-        return false;
-      }
-
+    try {
+      const itemSnap = await get(ref(db, `items/${itemId}`));
+      if (!itemSnap.exists()) return false;
+      
+      const currentItem = itemSnap.val();
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
       const todayStr = `${year}-${month}-${day}`;
 
-      const { error: itemError } = await supabase
-        .from("items")
-        .update({
-          status: "AVAILABLE",
-          returned_at: todayStr,
-        })
-        .eq("id", itemId);
+      await update(ref(db, `items/${itemId}`), {
+        status: "AVAILABLE",
+        returned_at: todayStr,
+      });
 
-      if (itemError) {
-        console.error("Supabase return error:", itemError);
-        return false;
-      }
-
-      await supabase.from("rental_logs").insert({
+      const newLogRef = push(ref(db, "rental_logs"));
+      await set(newLogRef, {
+        id: newLogRef.key,
         item_id: itemId,
         item_name: currentItem.name,
         action: "RETURN",
-        user_name: currentItem.borrower_name || "미확인",
+        user_name: currentItem.borrower_name || "미상",
         note: note || "정상 반납 완료",
-        timestamp,
+        timestamp: new Date().toISOString(),
       });
 
+      await this.triggerUpdate();
       return true;
-    }
-
-    // 서버 API 호출
-    try {
-      const res = await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "RETURN",
-          payload: { itemId, note },
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.version) currentServerVersion = json.version;
-        getBroadcastChannel()?.postMessage({ type: "SYNC_UPDATED" });
-        return true;
-      }
     } catch (e) {
-      console.error("Return API error:", e);
+      console.error("Return error:", e);
+      return false;
     }
-    return false;
   },
 
   async addItem(newItem: Partial<Item>): Promise<Item | null> {
-    const hasBorrower = Boolean(newItem.borrower_name && newItem.borrower_name.trim());
-    const now = new Date().toISOString();
-    const loanedTime = newItem.loaned_at || now;
+    try {
+      const hasBorrower = Boolean(newItem.borrower_name && newItem.borrower_name.trim());
+      const now = new Date().toISOString();
+      const loanedTime = newItem.loaned_at || now;
 
-    if (isSupabaseConfigured && supabase) {
+      const newId = "pop-" + Date.now().toString(36);
+      
       const fullItem: Item = {
-        id: "pop-" + Date.now().toString(36),
+        id: newId,
         name: newItem.name || `${newItem.category} (${newItem.location})`,
         category: newItem.category || "A2 POP",
         code: newItem.code || (newItem.category?.slice(0, 2) || "PO") + "-" + Math.floor(10 + Math.random() * 90),
-        location: newItem.location || "장소 미지정",
+        location: newItem.location || "장소 미정",
         status: hasBorrower ? "LOANED" : "AVAILABLE",
         borrower_name: hasBorrower ? newItem.borrower_name!.trim() : null,
         borrower_contact: newItem.borrower_contact || null,
@@ -231,182 +139,65 @@ export const InventoryService = {
         created_at: now,
       };
 
-      const { data, error } = await supabase.from("items").insert(fullItem).select().single();
-      if (!error && data) {
-        if (hasBorrower) {
-          await supabase.from("rental_logs").insert({
-            item_id: fullItem.id,
-            item_name: fullItem.name,
-            action: "BORROW",
-            user_name: fullItem.borrower_name!,
-            note: fullItem.description || "신규 등록 시 즉시 대여",
-            timestamp: loanedTime,
-          });
-        }
-        return data as Item;
+      await set(ref(db, `items/${newId}`), fullItem);
+
+      if (hasBorrower) {
+        const newLogRef = push(ref(db, "rental_logs"));
+        await set(newLogRef, {
+          id: newLogRef.key,
+          item_id: fullItem.id,
+          item_name: fullItem.name,
+          action: "BORROW",
+          user_name: fullItem.borrower_name!,
+          note: fullItem.description || "신규 등록 및 즉시 대여",
+          timestamp: loanedTime,
+        });
       }
+
+      await this.triggerUpdate();
+      return fullItem;
+    } catch (e) {
+      console.error("Add item error:", e);
       return null;
     }
-
-    // 서버 API 호출
-    try {
-      const res = await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "ADD",
-          payload: newItem,
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.version) currentServerVersion = json.version;
-        getBroadcastChannel()?.postMessage({ type: "SYNC_UPDATED" });
-        return json.item;
-      }
-    } catch (e) {
-      console.error("Add item API error:", e);
-    }
-    return null;
   },
 
   async editItem(itemId: string, data: Partial<Item>): Promise<boolean> {
-    if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from("items").update(data).eq("id", itemId);
-      return !error;
-    }
-
     try {
-      const res = await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "EDIT",
-          payload: { itemId, data },
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.version) currentServerVersion = json.version;
-        getBroadcastChannel()?.postMessage({ type: "SYNC_UPDATED" });
-        return true;
-      }
+      await update(ref(db, `items/${itemId}`), data);
+      await this.triggerUpdate();
+      return true;
     } catch (e) {
-      console.error("Edit item API error:", e);
+      console.error("Edit item error:", e);
+      return false;
     }
-    return false;
   },
 
   async deleteItem(itemId: string): Promise<boolean> {
-    if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from("items").delete().eq("id", itemId);
-      return !error;
-    }
-
     try {
-      const res = await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "DELETE",
-          payload: { itemId },
-        }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.version) currentServerVersion = json.version;
-        getBroadcastChannel()?.postMessage({ type: "SYNC_UPDATED" });
-        return true;
-      }
+      await set(ref(db, `items/${itemId}`), null);
+      await this.triggerUpdate();
+      return true;
     } catch (e) {
-      console.error("Delete API error:", e);
+      console.error("Delete item error:", e);
+      return false;
     }
-    return false;
   },
 
   async resetData(): Promise<boolean> {
-    try {
-      const res = await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "RESET" }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.version) currentServerVersion = json.version;
-        getBroadcastChannel()?.postMessage({ type: "SYNC_UPDATED" });
-        return true;
-      }
-    } catch (e) {
-      console.error("Reset API error:", e);
-    }
-    return false;
+    return false; // disabled
   },
 
-  // 실시간 변경 구독
   subscribe(onUpdate: () => void): () => void {
-    if (isSupabaseConfigured && supabase) {
-      const channel = supabase
-        .channel("hyundai_inventory_realtime")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "items" },
-          () => {
-            onUpdate();
-          }
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "rental_logs" },
-          () => {
-            onUpdate();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase?.removeChannel(channel);
-      };
-    }
-
-    // 서버 기반 스마트 실시간 폴링 + 브라우저 채널 즉각 반응
-    const channel = getBroadcastChannel();
-    const handleBroadcast = () => {
+    const updateRef = ref(db, "last_updated");
+    
+    // Listen for changes
+    onValue(updateRef, () => {
       onUpdate();
-    };
-
-    if (channel) {
-      channel.addEventListener("message", handleBroadcast);
-    }
-
-    // 1초 주기로 서버 버전 확인 (매우 가벼운 ping 요청)
-    const intervalId = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/data?version=${currentServerVersion}`, { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.changed) {
-            currentServerVersion = data.version;
-            onUpdate();
-          }
-        }
-      } catch {
-        // network issue ignore
-      }
-    }, 1000);
-
-    const handleFocus = () => {
-      onUpdate();
-    };
-    window.addEventListener("focus", handleFocus);
+    });
 
     return () => {
-      clearInterval(intervalId);
-      if (channel) {
-        channel.removeEventListener("message", handleBroadcast);
-        channel.close();
-      }
-      window.removeEventListener("focus", handleFocus);
+      off(updateRef);
     };
   },
 };
