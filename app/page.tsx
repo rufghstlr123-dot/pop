@@ -76,15 +76,11 @@ export default function HomePage() {
         return false;
       }
 
-      // Status filter
-      if (selectedCategory === "전체") {
-        return item.status === "LOANED" || !item.returned_at;
+      // Status filter by viewMode
+      if (viewMode === "RETURNED") {
+        return Boolean(item.returned_at) || item.status === "AVAILABLE";
       } else {
-        if (viewMode === "RETURNED") {
-          return Boolean(item.returned_at) || item.status === "AVAILABLE";
-        } else {
-          return item.status === "LOANED" || !item.returned_at;
-        }
+        return item.status === "LOANED" && !item.returned_at;
       }
     });
   }, [items, selectedCategory, viewMode]);
@@ -204,41 +200,39 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Sub Header Toggle: Appears only for specific categories, NOT for "전체" */}
-          {selectedCategory !== "전체" && (
-            <div className="px-5 py-2.5 bg-[#f8fafc] border-b border-[#d1d1d1] flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[0.85rem] font-bold text-[#1e293b]">{selectedCategory}</span>
-                <span className="text-[0.75rem] text-[#64748b]">
-                  ({viewMode === "CURRENT" ? "현재 대여 중" : "과거 반납 기록"} {filteredItems.length}건)
-                </span>
-              </div>
-
-              {/* Toggle Segment */}
-              <div className="flex items-center bg-[#e2e8f0] p-0.5 rounded-lg text-[0.8rem] font-bold">
-                <button
-                  onClick={() => setViewMode("CURRENT")}
-                  className={`px-3 py-1 rounded-md transition-all ${
-                    viewMode === "CURRENT"
-                      ? "bg-white text-[#217346] shadow-xs"
-                      : "text-[#64748b] hover:text-[#1e293b]"
-                  }`}
-                >
-                  현재 대여 중
-                </button>
-                <button
-                  onClick={() => setViewMode("RETURNED")}
-                  className={`px-3 py-1 rounded-md transition-all ${
-                    viewMode === "RETURNED"
-                      ? "bg-[#217346] text-white shadow-xs"
-                      : "text-[#64748b] hover:text-[#1e293b]"
-                  }`}
-                >
-                  과거 반납 기록
-                </button>
-              </div>
+          {/* Sub Header Toggle: Always visible for all categories including '전체' */}
+          <div className="px-5 py-2.5 bg-[#f8fafc] border-b border-[#d1d1d1] flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[0.85rem] font-bold text-[#1e293b]">{selectedCategory}</span>
+              <span className="text-[0.75rem] text-[#64748b]">
+                ({viewMode === "CURRENT" ? "현재 대여 중" : "과거 반납 기록"} {filteredItems.length}건)
+              </span>
             </div>
-          )}
+
+            {/* Toggle Segment */}
+            <div className="flex items-center bg-[#e2e8f0] p-0.5 rounded-lg text-[0.8rem] font-bold">
+              <button
+                onClick={() => setViewMode("CURRENT")}
+                className={`px-3 py-1 rounded-md transition-all ${
+                  viewMode === "CURRENT"
+                    ? "bg-white text-[#217346] shadow-xs"
+                    : "text-[#64748b] hover:text-[#1e293b]"
+                }`}
+              >
+                현재 대여 중
+              </button>
+              <button
+                onClick={() => setViewMode("RETURNED")}
+                className={`px-3 py-1 rounded-md transition-all ${
+                  viewMode === "RETURNED"
+                    ? "bg-[#217346] text-white shadow-xs"
+                    : "text-[#64748b] hover:text-[#1e293b]"
+                }`}
+              >
+                과거 반납 기록
+              </button>
+            </div>
+          </div>
 
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
