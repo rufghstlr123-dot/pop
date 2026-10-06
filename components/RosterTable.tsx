@@ -173,8 +173,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 </td>
 
                 {/* 관리 처리 */}
-                <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-1.5">
+                <td className="py-3 px-3 text-center whitespace-nowrap">
+                  <div className="flex items-center justify-center gap-2.5">
                     {!isAvailable ? (
                       <button
                         type="button"
@@ -182,13 +182,13 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                           e.stopPropagation();
                           onReturn(item);
                         }}
-                        className="px-2.5 py-1 rounded bg-[#ffedd5] hover:bg-[#fed7aa] text-[#c2410c] border border-[#fdba74] text-[0.8rem] font-bold transition inline-flex items-center gap-0.5 shadow-2xs cursor-pointer"
+                        className="px-3 py-1.5 rounded-md bg-[#ffedd5] hover:bg-[#fed7aa] text-[#c2410c] border border-[#fdba74] text-[0.85rem] font-bold transition inline-flex items-center gap-1 shadow-sm cursor-pointer"
                       >
-                        <RotateCcw className="w-3 h-3" />
+                        <RotateCcw className="w-3.5 h-3.5" />
                         <span>반납</span>
                       </button>
                     ) : (
-                      <span className="inline-block px-2 py-0.5 rounded text-[0.8rem] font-bold bg-[#f1f5f9] text-[#64748b] border border-[#e2e8f0]">
+                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-[0.85rem] font-bold bg-[#f1f5f9] text-[#64748b] border border-[#e2e8f0]">
                         반납 완료
                       </span>
                     )}
@@ -199,10 +199,10 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                         e.stopPropagation();
                         onEdit(item);
                       }}
-                      className="px-2 py-1 rounded bg-white hover:bg-slate-100 text-[#333333] border border-[#d1d1d1] text-[0.8rem] font-semibold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                      className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-100 text-[#333333] border border-[#d1d1d1] text-[0.85rem] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer"
                       title="물품 정보 수정"
                     >
-                      <Edit2 className="w-3 h-3 text-[#64748b]" />
+                      <Edit2 className="w-3.5 h-3.5 text-[#64748b]" />
                       <span>수정</span>
                     </button>
 
@@ -213,10 +213,10 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                           e.stopPropagation();
                           onDelete(item);
                         }}
-                        className="px-2 py-1 rounded bg-[#fff1f2] hover:bg-[#ffe4e6] text-[#be123c] border border-[#fecdd3] text-[0.8rem] font-semibold transition inline-flex items-center gap-0.5 shadow-2xs cursor-pointer"
+                        className="px-3 py-1.5 rounded-md bg-[#fff1f2] hover:bg-[#ffe4e6] text-[#be123c] border border-[#fecdd3] text-[0.85rem] font-semibold transition inline-flex items-center gap-1 shadow-sm cursor-pointer"
                         title="물품 삭제"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                         <span>삭제</span>
                       </button>
                     )}

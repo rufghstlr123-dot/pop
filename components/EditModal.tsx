@@ -178,33 +178,7 @@ export const EditModal: React.FC<EditModalProps> = ({
 
           {/* Buttons */}
           <div className="pt-2 flex items-center justify-between border-t border-[#eeeeee]">
-            <div>
-              {onDelete && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (confirm(`'${item.location} (${item.category})' 물품을 목록에서 영구 삭제하시겠습니까?`)) {
-                      setIsSubmitting(true);
-                      try {
-                        await onDelete(item.id);
-                        onClose();
-                      } catch (err) {
-                        console.error(err);
-                        alert("삭제 처리 중 오류가 발생했습니다.");
-                      } finally {
-                        setIsSubmitting(false);
-                      }
-                    }
-                  }}
-                  disabled={isSubmitting}
-                  className="px-3 py-1.5 rounded-md bg-[#fee2e2] hover:bg-[#fecaca] text-[#b91c1c] border border-[#fca5a5] text-[0.85rem] font-bold transition flex items-center gap-1 shadow-2xs disabled:opacity-50"
-                  title="이 물품을 영구 삭제"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>삭제</span>
-                </button>
-              )}
-            </div>
+            <div />
 
             <div className="flex items-center gap-2">
               <button
