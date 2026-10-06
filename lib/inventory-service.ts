@@ -209,20 +209,40 @@ export const InventoryService = {
     return false;
   },
 
-  async addItem(newItem: Omit<Item, "id" | "status" | "borrower_name" | "borrower_contact" | "loaned_at" | "expected_return_date" | "created_at">): Promise<Item | null> {
+  async addItem(newItem: Partial<Item>): Promise<Item | null> {
+    const hasBorrower = Boolean(newItem.borrower_name && newItem.borrower_name.trim());
+    const now = new Date().toISOString();
+    const loanedTime = newItem.loaned_at || now;
+
     if (isSupabaseConfigured && supabase) {
       const fullItem: Item = {
-        ...newItem,
-        id: "hyd-" + Date.now().toString(36),
-        status: "AVAILABLE",
-        borrower_name: null,
-        borrower_contact: null,
-        loaned_at: null,
-        expected_return_date: null,
-        created_at: new Date().toISOString(),
+        id: "pop-" + Date.now().toString(36),
+        name: newItem.name || `${newItem.category} (${newItem.location})`,
+        category: newItem.category || "A2 POP",
+        code: newItem.code || (newItem.category?.slice(0, 2) || "PO") + "-" + Math.floor(10 + Math.random() * 90),
+        location: newItem.location || "장소 미지정",
+        status: hasBorrower ? "LOANED" : "AVAILABLE",
+        borrower_name: hasBorrower ? newItem.borrower_name!.trim() : null,
+        borrower_contact: newItem.borrower_contact || null,
+        loaned_at: hasBorrower ? loanedTime : null,
+        expected_return_date: newItem.expected_return_date || null,
+        returned_at: null,
+        description: newItem.description || null,
+        created_at: now,
       };
+
       const { data, error } = await supabase.from("items").insert(fullItem).select().single();
       if (!error && data) {
+        if (hasBorrower) {
+          await supabase.from("rental_logs").insert({
+            item_id: fullItem.id,
+            item_name: fullItem.name,
+            action: "BORROW",
+            user_name: fullItem.borrower_name!,
+            note: fullItem.description || "신규 등록 시 즉시 대여",
+            timestamp: loanedTime,
+          });
+        }
         return data as Item;
       }
       return null;

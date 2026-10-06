@@ -78,12 +78,12 @@ export default function HomePage() {
 
       // Status filter
       if (selectedCategory === "전체") {
-        return item.status === "LOANED";
+        return item.status === "LOANED" || !item.returned_at;
       } else {
         if (viewMode === "RETURNED") {
-          return item.status === "AVAILABLE" && Boolean(item.returned_at || item.borrower_name);
+          return Boolean(item.returned_at) || item.status === "AVAILABLE";
         } else {
-          return item.status === "LOANED";
+          return item.status === "LOANED" || !item.returned_at;
         }
       }
     });

@@ -171,13 +171,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
 
-          {/* 대여자 (예시 문구 제거) */}
+          {/* 대여자 (대여 관리 목적이므로 필수 입력) */}
           <div className="space-y-1">
             <label className="block text-[0.8rem] font-semibold text-[#333333]">
-              대여자
+              대여자 <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
+              required
               value={borrower}
               onChange={(e) => setBorrower(e.target.value)}
               placeholder=""
