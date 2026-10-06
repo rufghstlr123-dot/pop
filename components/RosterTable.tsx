@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Item } from "@/types/inventory";
-import { RotateCcw, Edit2, CheckCircle2 } from "lucide-react";
+import { RotateCcw, Edit2, CheckCircle2, Trash2 } from "lucide-react";
 
 interface RosterTableProps {
   items: Item[];
@@ -9,6 +9,7 @@ interface RosterTableProps {
   highlightedItemIds?: string[];
   onReturn: (item: Item) => void;
   onEdit: (item: Item) => void;
+  onDelete?: (item: Item) => void;
 }
 
 function formatDate(dateString: string | null | undefined): string {
@@ -47,6 +48,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
   highlightedItemIds = [],
   onReturn,
   onEdit,
+  onDelete,
 }) => {
   if (items.length === 0) {
     const isReturnedView = viewMode === "RETURNED";
@@ -75,13 +77,13 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         {/* Fixed Column Width Definitions for Uniform Display across all categories */}
         <colgroup>
           <col className="w-[100px]" />
-          <col className="w-[230px]" />
-          <col className="w-[130px]" />
+          <col className="w-[220px]" />
+          <col className="w-[120px]" />
           <col className="w-[125px]" />
           <col className="w-[130px]" />
           <col className="w-[125px]" />
           <col className="w-auto" />
-          <col className="w-[150px]" />
+          <col className="w-[185px]" />
         </colgroup>
         <thead className="bg-[#f3f3f3] sticky top-0 z-20 border-b-2 border-[#bbbbbb]">
           <tr>
@@ -195,6 +197,17 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       <Edit2 className="w-3 h-3 text-[#64748b]" />
                       <span>수정</span>
                     </button>
+
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(item)}
+                        className="px-2 py-1 rounded bg-[#fff1f2] hover:bg-[#ffe4e6] text-[#be123c] border border-[#fecdd3] text-[0.8rem] font-semibold transition inline-flex items-center gap-0.5 shadow-2xs"
+                        title="물품 삭제"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>삭제</span>
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

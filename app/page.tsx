@@ -160,13 +160,6 @@ export default function HomePage() {
     }, 3600);
   };
 
-  const handleResetData = async () => {
-    if (confirm("모든 데이터를 기본 샘플 데이터로 복구하시겠습니까?")) {
-      await InventoryService.resetData();
-      await loadData();
-    }
-  };
-
   return (
     <div className="app-container">
       {/* App Header (sp-blond style with live clock) */}
@@ -184,7 +177,6 @@ export default function HomePage() {
           }}
           stats={categoryStats}
           onAddItem={handleAddItem}
-          onResetData={handleResetData}
         />
 
         {/* Right Main Table Viewer */}
@@ -262,6 +254,11 @@ export default function HomePage() {
               highlightedItemIds={isHighlightActive ? d1Items.map((i) => i.id) : []}
               onReturn={handleDirectReturn}
               onEdit={(i) => setSelectedEditItem(i)}
+              onDelete={async (item) => {
+                if (confirm(`'${item.location} (${item.category})' 물품을 영구 삭제하시겠습니까?`)) {
+                  await handleDeleteItem(item.id);
+                }
+              }}
             />
           )}
 

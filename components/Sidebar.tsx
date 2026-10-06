@@ -16,7 +16,6 @@ interface SidebarProps {
     expected_return_date?: string;
     description?: string;
   }) => Promise<void>;
-  onResetData: () => void;
 }
 
 function getTodayString(): string {
@@ -40,7 +39,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectCategory,
   stats,
   onAddItem,
-  onResetData,
 }) => {
   const registrableCategories = categories.filter((c) => c !== "전체");
   const [category, setCategory] = useState(
@@ -251,15 +249,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </button>
         </form>
-
-        <div className="pt-2 border-t border-[#d1d1d1] text-center">
-          <button
-            onClick={onResetData}
-            className="text-[0.8rem] text-[#666666] hover:text-[#217346] underline"
-          >
-            샘플 데이터로 초기화
-          </button>
-        </div>
       </div>
     </aside>
   );
