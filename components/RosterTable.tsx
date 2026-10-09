@@ -73,17 +73,17 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
   return (
     <div className="flex-1 overflow-x-auto overflow-y-auto bg-white">
-      <table className="w-full text-left border-collapse table-fixed min-w-[1000px]">
+      <table className="w-full text-left border-collapse table-fixed min-w-[1100px]">
         {/* Fixed Column Width Definitions for Uniform Display across all categories */}
         <colgroup>
-          <col className="w-[100px]" />
-          <col className="w-[200px]" />
-          <col className="w-[160px]" />
-          <col className="w-[125px]" />
-          <col className="w-[130px]" />
-          <col className="w-[125px]" />
-          <col className="w-[180px]" />
-          <col className="w-[250px]" />
+          <col className="w-[90px]" />
+          <col className="w-auto" />
+          <col className="w-[18%]" />
+          <col className="w-[110px]" />
+          <col className="w-[120px]" />
+          <col className="w-[110px]" />
+          <col className="w-[12%]" />
+          <col className="w-[240px]" />
         </colgroup>
         <thead className="bg-[#f3f3f3] sticky top-0 z-20 border-b-2 border-[#bbbbbb]">
           <tr>
