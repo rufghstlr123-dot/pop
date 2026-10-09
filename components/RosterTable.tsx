@@ -78,11 +78,11 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         <colgroup>
           <col className="w-[100px]" />
           <col className="w-[200px]" />
-          <col className="w-[100px]" />
+          <col className="w-[160px]" />
           <col className="w-[125px]" />
           <col className="w-[130px]" />
           <col className="w-[125px]" />
-          <col className="w-auto" />
+          <col className="w-[180px]" />
           <col className="w-[250px]" />
         </colgroup>
         <thead className="bg-[#f3f3f3] sticky top-0 z-20 border-b-2 border-[#bbbbbb]">
@@ -168,7 +168,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 </td>
 
                 {/* 비고 */}
-                <td className="py-2.5 px-4 border-r border-[#d1d1d1] text-[0.85rem] text-[#475569] truncate" title={item.description || "-"}>
+                <td className="py-2.5 px-4 border-r border-[#d1d1d1] text-[0.85rem] text-[#475569] whitespace-pre-line" title={item.description || "-"}>
                   {item.description || "-"}
                 </td>
 
