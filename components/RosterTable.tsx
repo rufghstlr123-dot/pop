@@ -73,17 +73,17 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
   return (
     <div className="flex-1 overflow-x-auto overflow-y-auto bg-white">
-      <table className="w-full text-left border-collapse table-fixed min-w-[1100px]">
+      <table className="w-full text-left border-collapse table-fixed min-w-[1250px]">
         {/* Fixed Column Width Definitions for Uniform Display across all categories */}
         <colgroup>
-          <col className="w-[90px]" />
-          <col className="w-auto" />
-          <col className="w-[18%]" />
-          <col className="w-[110px]" />
-          <col className="w-[120px]" />
-          <col className="w-[110px]" />
-          <col className="w-[12%]" />
-          <col className="w-[240px]" />
+          <col className="w-[115px]" />  {/* 카테고리 (x) */}
+          <col className="w-[230px]" />  {/* 설치 장소 (2x) */}
+          <col className="w-[230px]" />  {/* 대여자 (2x) */}
+          <col className="w-[115px]" />  {/* 대여 일자 (x) */}
+          <col className="w-[115px]" />  {/* 반납 예정 일자 (x) */}
+          <col className="w-[115px]" />  {/* 반납 일자 (x) */}
+          <col className="w-auto" />     {/* 비고 (남는 공간 자유롭게) */}
+          <col className="w-[240px]" />  {/* 관리 처리 (버튼 3개 고정 너비) */}
         </colgroup>
         <thead className="bg-[#f3f3f3] sticky top-0 z-20 border-b-2 border-[#bbbbbb]">
           <tr>
