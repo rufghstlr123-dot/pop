@@ -83,7 +83,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
           <col className="w-[115px]" />  {/* 반납 예정 일자 (x) */}
           <col className="w-[115px]" />  {/* 반납 일자 (x) */}
           <col className="w-auto" />     {/* 비고 (남는 공간 자유롭게) */}
-          <col className="w-[240px]" />  {/* 관리 처리 (버튼 3개 고정 너비) */}
+          <col className="w-[280px]" />  {/* 관리 처리 (버튼 3개 고정 너비) */}
         </colgroup>
         <thead className="bg-[#f3f3f3] sticky top-0 z-20 border-b-2 border-[#bbbbbb]">
           <tr>
@@ -174,7 +174,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
                 {/* 관리 처리 */}
                 <td className="py-3 px-3 text-center whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-2.5">
+                  <div className="flex items-center justify-center gap-3.5">
                     {!isAvailable ? (
                       <button
                         type="button"
