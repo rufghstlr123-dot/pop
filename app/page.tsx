@@ -68,9 +68,9 @@ export default function HomePage() {
     );
   }, [items]);
 
-  // Filter items based on selected category & viewMode toggle
+  // Filter and sort items based on selected category & viewMode toggle
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+    const list = items.filter((item) => {
       // Category filter
       if (selectedCategory !== "전체" && item.category !== selectedCategory) {
         return false;
@@ -82,6 +82,27 @@ export default function HomePage() {
       } else {
         return item.status === "LOANED" && !item.returned_at;
       }
+    });
+
+    // 기본 정렬: 반납 예정일자순 (임박한 날짜 우선, 날짜 미지정은 맨 뒤로)
+    return list.sort((a, b) => {
+      const dateA = a.expected_return_date ? a.expected_return_date.trim() : "";
+      const dateB = b.expected_return_date ? b.expected_return_date.trim() : "";
+
+      // 날짜가 둘 다 없으면 등록순(최신순) 정렬
+      if (!dateA && !dateB) {
+        return (b.created_at || "").localeCompare(a.created_at || "");
+      }
+      // 날짜 없는 항목은 맨 뒤로 배치
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+
+      // 반납 예정일자 오름차순 (빠른 날짜부터)
+      const dateCompare = dateA.localeCompare(dateB);
+      if (dateCompare !== 0) return dateCompare;
+
+      // 반납 예정일자가 같으면 최신 등록일자 순으로 정렬
+      return (b.created_at || "").localeCompare(a.created_at || "");
     });
   }, [items, selectedCategory, viewMode]);
 
