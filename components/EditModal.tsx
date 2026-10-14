@@ -55,12 +55,18 @@ export const EditModal: React.FC<EditModalProps> = ({
       return;
     }
 
+    const qty = parseInt(String(quantity).trim(), 10);
+    if (isNaN(qty) || qty < 1) {
+      alert("수량을 1개 이상 입력해주세요.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onSubmit(item.id, {
         location: location.trim(),
         borrower_name: borrowerName.trim() || null,
-        quantity: typeof quantity === "string" ? (parseInt(quantity, 10) || 1) : (quantity > 0 ? quantity : 1),
+        quantity: qty,
         loaned_at: loanedAt.trim() || null,
         expected_return_date: expectedReturnDate.trim() || null,
         returned_at: returnedAt.trim() || null,
@@ -125,21 +131,18 @@ export const EditModal: React.FC<EditModalProps> = ({
             </div>
             <div>
               <label className="block text-[0.8rem] font-semibold text-[#333333] mb-1">
-                수량
+                수량 <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
-                min={1}
+                type="text"
+                inputMode="numeric"
+                required
                 value={quantity}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "") {
-                    setQuantity("");
-                  } else {
-                    const parsed = parseInt(val, 10);
-                    setQuantity(isNaN(parsed) || parsed < 1 ? 1 : parsed);
-                  }
+                  const val = e.target.value.replace(/\D/g, "");
+                  setQuantity(val);
                 }}
+                placeholder="1"
                 className="w-full px-2 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition text-center font-semibold"
               />
             </div>
