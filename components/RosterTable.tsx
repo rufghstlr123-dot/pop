@@ -78,7 +78,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         <colgroup>
           <col className="w-[115px]" />  {/* 카테고리 (x) */}
           <col className="w-[230px]" />  {/* 설치 장소 (2x) */}
-          <col className="w-[230px]" />  {/* 대여자 (2x) */}
+          <col className="w-[153px]" />  {/* 대여자 (2/3 of 2x) */}
+          <col className="w-[77px]" />   {/* 수량 (1/3 of 2x) */}
           <col className="w-[115px]" />  {/* 대여 일자 (x) */}
           <col className="w-[115px]" />  {/* 반납 예정 일자 (x) */}
           <col className="w-[115px]" />  {/* 반납 일자 (x) */}
@@ -95,6 +96,9 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             </th>
             <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               대여자
+            </th>
+            <th className="py-2.5 px-2 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
+              수량
             </th>
             <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               대여 일자
@@ -150,6 +154,11 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 {/* 대여자 */}
                 <td className="py-2.5 px-4 border-r border-[#d1d1d1] text-[0.85rem] text-[#333333] truncate" title={item.borrower_name || "-"}>
                   {item.borrower_name || "-"}
+                </td>
+
+                {/* 수량 */}
+                <td className="py-2.5 px-2 border-r border-[#d1d1d1] text-center whitespace-nowrap text-[0.85rem] font-semibold text-[#1e293b]">
+                  {item.quantity ?? 1}
                 </td>
 
                 {/* 대여 일자 */}

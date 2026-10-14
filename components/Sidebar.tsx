@@ -12,6 +12,7 @@ interface SidebarProps {
     category: string;
     location: string;
     borrower_name?: string;
+    quantity?: number;
     loaned_at?: string;
     expected_return_date?: string;
     description?: string;
@@ -45,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     selectedCategory === "전체" ? (registrableCategories[0] || "A2 POP") : selectedCategory
   );
   const [borrower, setBorrower] = useState("");
+  const [quantity, setQuantity] = useState<number | string>(1);
   const [location, setLocation] = useState("");
   const [loanedAt, setLoanedAt] = useState(getTodayString);
   const [expectedReturnDate, setExpectedReturnDate] = useState("");
@@ -78,12 +80,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         category,
         location: location.trim(),
         borrower_name: borrower.trim() || undefined,
+        quantity: typeof quantity === "string" ? (parseInt(quantity, 10) || 1) : quantity,
         loaned_at: loanedAt ? loanedAt.trim() : undefined,
         expected_return_date: expectedReturnDate ? expectedReturnDate.trim() : undefined,
         description: note.trim() || undefined,
       });
       // Reset fields
       setBorrower("");
+      setQuantity(1);
       setLocation("");
       setExpectedReturnDate("");
       setNote("");
@@ -171,19 +175,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
 
-          {/* 대여자 (대여 관리 목적이므로 필수 입력) */}
-          <div className="space-y-1">
-            <label className="block text-[0.8rem] font-semibold text-[#333333]">
-              대여자 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={borrower}
-              onChange={(e) => setBorrower(e.target.value)}
-              placeholder=""
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
-            />
+          {/* 대여자 & 수량 */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2 space-y-1">
+              <label className="block text-[0.8rem] font-semibold text-[#333333]">
+                대여자 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={borrower}
+                onChange={(e) => setBorrower(e.target.value)}
+                placeholder=""
+                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-[0.8rem] font-semibold text-[#333333]">
+                수량
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    setQuantity("");
+                  } else {
+                    const parsed = parseInt(val, 10);
+                    setQuantity(isNaN(parsed) || parsed < 1 ? 1 : parsed);
+                  }
+                }}
+                className="w-full px-2 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition text-center font-semibold"
+              />
+            </div>
           </div>
 
           {/* 대여 일자 & 반납 예정 일자 (예시 문구 제거) */}

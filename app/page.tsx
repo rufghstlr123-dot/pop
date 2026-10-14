@@ -121,6 +121,7 @@ export default function HomePage() {
     category: string;
     location: string;
     borrower_name?: string;
+    quantity?: number;
     loaned_at?: string;
     expected_return_date?: string;
     description?: string;
@@ -132,6 +133,7 @@ export default function HomePage() {
       location: itemData.location,
       description: itemData.description || null,
       borrower_name: itemData.borrower_name || null,
+      quantity: itemData.quantity || 1,
       loaned_at: itemData.loaned_at || null,
       expected_return_date: itemData.expected_return_date || null,
       returned_at: null,

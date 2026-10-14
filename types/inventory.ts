@@ -9,6 +9,7 @@ export interface Item {
   status: ItemStatus;
   borrower_name: string | null;
   borrower_contact: string | null;
+  quantity?: number;
   loaned_at: string | null;
   expected_return_date: string | null;
   returned_at?: string | null;

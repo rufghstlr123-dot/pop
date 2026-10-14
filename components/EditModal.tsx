@@ -27,6 +27,7 @@ export const EditModal: React.FC<EditModalProps> = ({
 }) => {
   const [location, setLocation] = useState("");
   const [borrowerName, setBorrowerName] = useState("");
+  const [quantity, setQuantity] = useState<number | string>(1);
   const [loanedAt, setLoanedAt] = useState("");
   const [expectedReturnDate, setExpectedReturnDate] = useState("");
   const [returnedAt, setReturnedAt] = useState("");
@@ -37,6 +38,7 @@ export const EditModal: React.FC<EditModalProps> = ({
     if (item) {
       setLocation(item.location || "");
       setBorrowerName(item.borrower_name || "");
+      setQuantity(item.quantity ?? 1);
       setLoanedAt(item.loaned_at || "");
       setExpectedReturnDate(item.expected_return_date || "");
       setReturnedAt(item.returned_at || "");
@@ -58,6 +60,7 @@ export const EditModal: React.FC<EditModalProps> = ({
       await onSubmit(item.id, {
         location: location.trim(),
         borrower_name: borrowerName.trim() || null,
+        quantity: typeof quantity === "string" ? (parseInt(quantity, 10) || 1) : (quantity > 0 ? quantity : 1),
         loaned_at: loanedAt.trim() || null,
         expected_return_date: expectedReturnDate.trim() || null,
         returned_at: returnedAt.trim() || null,
@@ -108,16 +111,38 @@ export const EditModal: React.FC<EditModalProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-[0.8rem] font-semibold text-[#333333] mb-1">
-              대여자
-            </label>
-            <input
-              type="text"
-              value={borrowerName}
-              onChange={(e) => setBorrowerName(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
-            />
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className="block text-[0.8rem] font-semibold text-[#333333] mb-1">
+                대여자
+              </label>
+              <input
+                type="text"
+                value={borrowerName}
+                onChange={(e) => setBorrowerName(e.target.value)}
+                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+              />
+            </div>
+            <div>
+              <label className="block text-[0.8rem] font-semibold text-[#333333] mb-1">
+                수량
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    setQuantity("");
+                  } else {
+                    const parsed = parseInt(val, 10);
+                    setQuantity(isNaN(parsed) || parsed < 1 ? 1 : parsed);
+                  }
+                }}
+                className="w-full px-2 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition text-center font-semibold"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
