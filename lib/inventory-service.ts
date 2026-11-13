@@ -132,6 +132,7 @@ export const InventoryService = {
         status: hasBorrower ? "LOANED" : "AVAILABLE",
         borrower_name: hasBorrower ? newItem.borrower_name!.trim() : null,
         borrower_contact: newItem.borrower_contact || null,
+        issuer_name: newItem.issuer_name?.trim() || null,
         quantity: typeof newItem.quantity === "number" && !isNaN(newItem.quantity) && newItem.quantity > 0 ? newItem.quantity : 1,
         loaned_at: hasBorrower ? loanedTime : null,
         expected_return_date: newItem.expected_return_date || null,

@@ -12,6 +12,7 @@ interface SidebarProps {
     category: string;
     location: string;
     borrower_name?: string;
+    issuer_name?: string;
     quantity?: number;
     loaned_at?: string;
     expected_return_date?: string;
@@ -46,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     selectedCategory === "전체" ? (registrableCategories[0] || "A2 POP") : selectedCategory
   );
   const [borrower, setBorrower] = useState("");
+  const [issuer, setIssuer] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [location, setLocation] = useState("");
   const [loanedAt, setLoanedAt] = useState(getTodayString);
@@ -74,6 +76,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return;
     }
 
+    if (!issuer.trim()) {
+      alert("불출자를 입력해주세요.");
+      return;
+    }
+
     const qty = parseInt(String(quantity).trim(), 10);
     if (isNaN(qty) || qty < 1) {
       alert("수량을 1개 이상 입력해주세요.");
@@ -86,6 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         category,
         location: location.trim(),
         borrower_name: borrower.trim() || undefined,
+        issuer_name: issuer.trim(),
         quantity: qty,
         loaned_at: loanedAt ? loanedAt.trim() : undefined,
         expected_return_date: expectedReturnDate ? expectedReturnDate.trim() : undefined,
@@ -93,6 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       });
       // Reset fields
       setBorrower("");
+      setIssuer("");
       setQuantity("1");
       setLocation("");
       setExpectedReturnDate("");
@@ -213,6 +222,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="w-full px-2 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition text-center font-semibold"
               />
             </div>
+          </div>
+
+          {/* 불출자 (필수 입력) */}
+          <div className="space-y-1">
+            <label className="block text-[0.8rem] font-semibold text-[#333333]">
+              불출자 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={issuer}
+              onChange={(e) => setIssuer(e.target.value)}
+              placeholder=""
+              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+            />
           </div>
 
           {/* 대여 일자 & 반납 예정 일자 (예시 문구 제거) */}

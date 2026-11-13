@@ -27,6 +27,7 @@ export const EditModal: React.FC<EditModalProps> = ({
 }) => {
   const [location, setLocation] = useState("");
   const [borrowerName, setBorrowerName] = useState("");
+  const [issuerName, setIssuerName] = useState("");
   const [quantity, setQuantity] = useState<number | string>(1);
   const [loanedAt, setLoanedAt] = useState("");
   const [expectedReturnDate, setExpectedReturnDate] = useState("");
@@ -38,6 +39,7 @@ export const EditModal: React.FC<EditModalProps> = ({
     if (item) {
       setLocation(item.location || "");
       setBorrowerName(item.borrower_name || "");
+      setIssuerName(item.issuer_name || "");
       setQuantity(item.quantity ?? 1);
       setLoanedAt(item.loaned_at || "");
       setExpectedReturnDate(item.expected_return_date || "");
@@ -66,6 +68,7 @@ export const EditModal: React.FC<EditModalProps> = ({
       await onSubmit(item.id, {
         location: location.trim(),
         borrower_name: borrowerName.trim() || null,
+        issuer_name: issuerName.trim() || null,
         quantity: qty,
         loaned_at: loanedAt.trim() || null,
         expected_return_date: expectedReturnDate.trim() || null,
@@ -146,6 +149,18 @@ export const EditModal: React.FC<EditModalProps> = ({
                 className="w-full px-2 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition text-center font-semibold"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[0.8rem] font-semibold text-[#333333] mb-1">
+              불출자
+            </label>
+            <input
+              type="text"
+              value={issuerName}
+              onChange={(e) => setIssuerName(e.target.value)}
+              className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-2">

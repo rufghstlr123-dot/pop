@@ -73,12 +73,13 @@ export const RosterTable: React.FC<RosterTableProps> = ({
 
   return (
     <div className="flex-1 overflow-x-auto overflow-y-auto bg-white">
-      <table className="w-full text-left border-collapse table-fixed min-w-[1250px]">
+      <table className="w-full text-left border-collapse table-fixed min-w-[1380px]">
         {/* Fixed Column Width Definitions for Uniform Display across all categories */}
         <colgroup>
           <col className="w-[115px]" />  {/* 카테고리 (x) */}
           <col className="w-[230px]" />  {/* 설치 장소 (2x) */}
           <col className="w-[153px]" />  {/* 대여자 (2/3 of 2x) */}
+          <col className="w-[115px]" />  {/* 불출자 */}
           <col className="w-[77px]" />   {/* 수량 (1/3 of 2x) */}
           <col className="w-[115px]" />  {/* 대여 일자 (x) */}
           <col className="w-[115px]" />  {/* 반납 예정 일자 (x) */}
@@ -96,6 +97,9 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             </th>
             <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               대여자
+            </th>
+            <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
+              불출자
             </th>
             <th className="py-2.5 px-2 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
               수량
@@ -154,6 +158,11 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 {/* 대여자 */}
                 <td className="py-2.5 px-4 border-r border-[#d1d1d1] text-[0.85rem] text-[#333333] truncate" title={item.borrower_name || "-"}>
                   {item.borrower_name || "-"}
+                </td>
+
+                {/* 불출자 */}
+                <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center text-[0.85rem] text-[#333333] truncate" title={item.issuer_name || "-"}>
+                  {item.issuer_name || "-"}
                 </td>
 
                 {/* 수량 */}
