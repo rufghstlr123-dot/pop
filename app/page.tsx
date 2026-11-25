@@ -5,7 +5,7 @@ import { Item, RentalLog, InventoryStats } from "@/types/inventory";
 import { InventoryService } from "@/lib/inventory-service";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { RosterTable, isDMinus1 } from "@/components/RosterTable";
+import { RosterTable, isDMinus1, SortKey, SortOrder } from "@/components/RosterTable";
 import { EditModal } from "@/components/EditModal";
 import { AlertCircle } from "lucide-react";
 
@@ -20,6 +20,8 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [viewMode, setViewMode] = useState<"CURRENT" | "RETURNED">("CURRENT");
   const [isHighlightActive, setIsHighlightActive] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("expected_return_date");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
   // Modals
   const [selectedEditItem, setSelectedEditItem] = useState<Item | null>(null);
@@ -68,7 +70,16 @@ export default function HomePage() {
     );
   }, [items]);
 
-  // Filter and sort items based on selected category & viewMode toggle
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortOrder("asc");
+    }
+  };
+
+  // Filter and sort items based on selected category, viewMode toggle, and column sort
   const filteredItems = useMemo(() => {
     const list = items.filter((item) => {
       // Category filter
@@ -84,27 +95,36 @@ export default function HomePage() {
       }
     });
 
-    // 기본 정렬: 반납 예정일자순 (임박한 날짜 우선, 날짜 미지정은 맨 뒤로)
-    return list.sort((a, b) => {
-      const dateA = a.expected_return_date ? a.expected_return_date.trim() : "";
-      const dateB = b.expected_return_date ? b.expected_return_date.trim() : "";
+    const direction = sortOrder === "asc" ? 1 : -1;
 
-      // 날짜가 둘 다 없으면 등록순(최신순) 정렬
-      if (!dateA && !dateB) {
+    return list.sort((a, b) => {
+      if (sortKey === "quantity") {
+        const qtyA = a.quantity ?? 1;
+        const qtyB = b.quantity ?? 1;
+        if (qtyA !== qtyB) {
+          return (qtyA - qtyB) * direction;
+        }
         return (b.created_at || "").localeCompare(a.created_at || "");
       }
-      // 날짜 없는 항목은 맨 뒤로 배치
-      if (!dateA) return 1;
-      if (!dateB) return -1;
 
-      // 반납 예정일자 오름차순 (빠른 날짜부터)
-      const dateCompare = dateA.localeCompare(dateB);
-      if (dateCompare !== 0) return dateCompare;
+      const rawA = a[sortKey];
+      const rawB = b[sortKey];
+      const valA = typeof rawA === "string" ? rawA.trim() : "";
+      const valB = typeof rawB === "string" ? rawB.trim() : "";
 
-      // 반납 예정일자가 같으면 최신 등록일자 순으로 정렬
+      if (!valA && !valB) {
+        return (b.created_at || "").localeCompare(a.created_at || "");
+      }
+      // 빈 값은 오름/내림차순과 무관하게 항상 맨 아래로 배치
+      if (!valA) return 1;
+      if (!valB) return -1;
+
+      const cmp = valA.localeCompare(valB, "ko");
+      if (cmp !== 0) return cmp * direction;
+
       return (b.created_at || "").localeCompare(a.created_at || "");
     });
-  }, [items, selectedCategory, viewMode]);
+  }, [items, selectedCategory, viewMode, sortKey, sortOrder]);
 
   // Actions: Direct return without popup
   // Actions: Direct return without popup
@@ -271,6 +291,9 @@ export default function HomePage() {
               items={filteredItems}
               viewMode={viewMode}
               highlightedItemIds={isHighlightActive ? d1Items.map((i) => i.id) : []}
+              sortKey={sortKey}
+              sortOrder={sortOrder}
+              onSort={handleSort}
               onReturn={handleDirectReturn}
               onEdit={(i) => setSelectedEditItem(i)}
               onDelete={async (item) => {

@@ -1,12 +1,28 @@
 "use client";
 import React from "react";
 import { Item } from "@/types/inventory";
-import { RotateCcw, Edit2, CheckCircle2, Trash2 } from "lucide-react";
+import { RotateCcw, Edit2, CheckCircle2, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+
+export type SortKey =
+  | "category"
+  | "location"
+  | "borrower_name"
+  | "issuer_name"
+  | "quantity"
+  | "loaned_at"
+  | "expected_return_date"
+  | "returned_at"
+  | "description";
+
+export type SortOrder = "asc" | "desc";
 
 interface RosterTableProps {
   items: Item[];
   viewMode?: "CURRENT" | "RETURNED";
   highlightedItemIds?: string[];
+  sortKey?: SortKey;
+  sortOrder?: SortOrder;
+  onSort?: (key: SortKey) => void;
   onReturn: (item: Item) => void;
   onEdit: (item: Item) => void;
   onDelete?: (item: Item) => void;
@@ -42,10 +58,25 @@ export function isDMinus1(dateStr: string | null | undefined): boolean {
   }
 }
 
+const SORTABLE_HEADERS: { key: SortKey; label: string }[] = [
+  { key: "category", label: "카테고리" },
+  { key: "location", label: "설치 장소" },
+  { key: "borrower_name", label: "대여자" },
+  { key: "issuer_name", label: "불출자" },
+  { key: "quantity", label: "수량" },
+  { key: "loaned_at", label: "대여 일자" },
+  { key: "expected_return_date", label: "반납 예정 일자" },
+  { key: "returned_at", label: "반납 일자" },
+  { key: "description", label: "비고" },
+];
+
 export const RosterTable: React.FC<RosterTableProps> = ({
   items,
   viewMode = "CURRENT",
   highlightedItemIds = [],
+  sortKey = "expected_return_date",
+  sortOrder = "asc",
+  onSort,
   onReturn,
   onEdit,
   onDelete,
@@ -89,33 +120,34 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         </colgroup>
         <thead className="bg-[#f3f3f3] sticky top-0 z-20 border-b-2 border-[#bbbbbb]">
           <tr>
-            <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              카테고리
-            </th>
-            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              설치 장소
-            </th>
-            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              대여자
-            </th>
-            <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              불출자
-            </th>
-            <th className="py-2.5 px-2 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              수량
-            </th>
-            <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              대여 일자
-            </th>
-            <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              반납 예정 일자
-            </th>
-            <th className="py-2.5 px-3 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              반납 일자
-            </th>
-            <th className="py-2.5 px-4 font-bold text-[#333333] border-r border-[#d1d1d1] text-center text-[0.8rem]">
-              비고
-            </th>
+            {SORTABLE_HEADERS.map(({ key, label }) => {
+              const isActive = sortKey === key;
+              return (
+                <th
+                  key={key}
+                  onClick={() => onSort?.(key)}
+                  className={`py-2.5 px-1.5 font-bold border-r border-[#d1d1d1] text-center text-[0.8rem] whitespace-nowrap select-none transition-colors group ${
+                    onSort ? "cursor-pointer hover:bg-[#e5e7eb]" : ""
+                  } ${isActive ? "text-[#217346] bg-[#e6f2ec]/60" : "text-[#333333]"}`}
+                  title={`${label} 기준 정렬`}
+                >
+                  <span className="inline-flex items-center justify-center gap-1">
+                    <span>{label}</span>
+                    {onSort && (
+                      isActive ? (
+                        sortOrder === "asc" ? (
+                          <ArrowUp className="w-3 h-3 text-[#217346] shrink-0" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3 text-[#217346] shrink-0" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-[#94a3b8] opacity-50 group-hover:opacity-100 shrink-0" />
+                      )
+                    )}
+                  </span>
+                </th>
+              );
+            })}
             <th className="py-2.5 px-3 font-bold text-[#333333] text-center text-[0.8rem]">
               관리 처리
             </th>
