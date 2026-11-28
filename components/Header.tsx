@@ -1,7 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Clock, Settings, X } from "lucide-react";
+import { Clock, Settings, X, Lock } from "lucide-react";
 import { StockTotals } from "@/lib/inventory-service";
+
+const STOCK_CONFIG_PASSWORD = "2222";
 
 export interface CategoryStockSummary {
   key: keyof StockTotals;
@@ -43,6 +45,9 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [currentDateTime, setCurrentDateTime] = useState<string>("");
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [draftTotals, setDraftTotals] = useState<StockTotals>({
     "A2 POP": 14,
     "A3 POP": 11,
@@ -64,13 +69,38 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }, [stockTotals]);
 
+  const handleOpenConfig = () => {
+    setIsUnlocked(false);
+    setPasswordInput("");
+    setPasswordError("");
+    setIsConfigOpen(true);
+  };
+
+  const handleCloseConfig = () => {
+    setIsConfigOpen(false);
+    setIsUnlocked(false);
+    setPasswordInput("");
+    setPasswordError("");
+  };
+
+  const handleVerifyPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === STOCK_CONFIG_PASSWORD) {
+      setIsUnlocked(true);
+      setPasswordError("");
+    } else {
+      setPasswordError("비밀번호가 올바르지 않습니다.");
+      setPasswordInput("");
+    }
+  };
+
   const handleSaveTotals = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!onUpdateStockTotals) return;
     setIsSaving(true);
     try {
       await onUpdateStockTotals(draftTotals);
-      setIsConfigOpen(false);
+      handleCloseConfig();
     } finally {
       setIsSaving(false);
     }
@@ -115,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
             {onUpdateStockTotals && (
               <button
                 type="button"
-                onClick={() => setIsConfigOpen(true)}
+                onClick={handleOpenConfig}
                 className="p-1.5 rounded-md text-[#64748b] hover:text-[#217346] hover:bg-[#e6f2ec] border border-transparent hover:border-[#cbd5e1] transition cursor-pointer"
                 title="계산용 총 수량 설정"
               >
@@ -144,55 +174,99 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px]">
           <div className="bg-white border border-[#d1d1d1] rounded-xl w-full max-w-xs shadow-2xl overflow-hidden">
             <div className="bg-[#217346] text-white px-4 py-2.5 flex items-center justify-between">
-              <h2 className="text-[0.95rem] font-bold">보유 총 수량 설정 (계산용)</h2>
+              <h2 className="text-[0.95rem] font-bold flex items-center gap-1.5">
+                {!isUnlocked && <Lock className="w-4 h-4" />}
+                <span>{isUnlocked ? "보유 총 수량 설정 (계산용)" : "관리자 비밀번호 확인"}</span>
+              </h2>
               <button
                 type="button"
-                onClick={() => setIsConfigOpen(false)}
+                onClick={handleCloseConfig}
                 className="w-6 h-6 rounded hover:bg-white/20 flex items-center justify-center text-white transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleSaveTotals} className="p-4 space-y-3 text-[0.85rem]">
-              <p className="text-[0.75rem] text-[#64748b] leading-snug">
-                입력한 총 수량에서 현재 대여 중인 수량을 차감하여 잔여수량을 자동 계산합니다.
-              </p>
-              {(["A2 POP", "A3 POP", "철제배너"] as (keyof StockTotals)[]).map((cat) => (
-                <div key={cat} className="flex items-center justify-between gap-3">
-                  <label className="font-semibold text-[#333333]">{cat}</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={draftTotals[cat]}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value.replace(/\D/g, ""), 10);
-                      setDraftTotals((prev) => ({
-                        ...prev,
-                        [cat]: isNaN(val) ? 0 : val,
-                      }));
-                    }}
-                    className="w-24 px-2.5 py-1 border border-[#d1d1d1] rounded-md text-center font-semibold focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec]"
-                  />
+
+            {!isUnlocked ? (
+              <form onSubmit={handleVerifyPassword} className="p-4 space-y-3 text-[0.85rem]">
+                <p className="text-[0.8rem] text-[#475569] leading-snug">
+                  보유 총 수량을 수정하려면 비밀번호를 입력해주세요.
+                </p>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  autoFocus
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    if (passwordError) setPasswordError("");
+                  }}
+                  placeholder="비밀번호 입력"
+                  className="w-full px-3 py-2 border border-[#d1d1d1] rounded-md text-center font-mono text-[0.95rem] tracking-widest focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec]"
+                />
+                {passwordError && (
+                  <p className="text-[0.75rem] text-red-600 font-semibold text-center">
+                    {passwordError}
+                  </p>
+                )}
+                <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#eeeeee]">
+                  <button
+                    type="button"
+                    onClick={handleCloseConfig}
+                    className="px-3 py-1.5 rounded-md border border-[#d1d1d1] bg-white text-[#333333] text-[0.8rem] font-semibold hover:bg-slate-100 transition"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 rounded-md bg-[#217346] hover:bg-[#185a37] text-white text-[0.8rem] font-bold transition"
+                  >
+                    확인
+                  </button>
                 </div>
-              ))}
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#eeeeee]">
-                <button
-                  type="button"
-                  onClick={() => setIsConfigOpen(false)}
-                  disabled={isSaving}
-                  className="px-3 py-1.5 rounded-md border border-[#d1d1d1] bg-white text-[#333333] text-[0.8rem] font-semibold hover:bg-slate-100 transition"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-3 py-1.5 rounded-md bg-[#217346] hover:bg-[#185a37] text-white text-[0.8rem] font-bold transition disabled:opacity-50"
-                >
-                  {isSaving ? "저장 중..." : "저장"}
-                </button>
-              </div>
-            </form>
+              </form>
+            ) : (
+              <form onSubmit={handleSaveTotals} className="p-4 space-y-3 text-[0.85rem]">
+                <p className="text-[0.75rem] text-[#64748b] leading-snug">
+                  입력한 총 수량에서 현재 대여 중인 수량을 차감하여 잔여수량을 자동 계산합니다.
+                </p>
+                {(["A2 POP", "A3 POP", "철제배너"] as (keyof StockTotals)[]).map((cat) => (
+                  <div key={cat} className="flex items-center justify-between gap-3">
+                    <label className="font-semibold text-[#333333]">{cat}</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={draftTotals[cat]}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value.replace(/\D/g, ""), 10);
+                        setDraftTotals((prev) => ({
+                          ...prev,
+                          [cat]: isNaN(val) ? 0 : val,
+                        }));
+                      }}
+                      className="w-24 px-2.5 py-1 border border-[#d1d1d1] rounded-md text-center font-semibold focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec]"
+                    />
+                  </div>
+                ))}
+                <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#eeeeee]">
+                  <button
+                    type="button"
+                    onClick={handleCloseConfig}
+                    disabled={isSaving}
+                    className="px-3 py-1.5 rounded-md border border-[#d1d1d1] bg-white text-[#333333] text-[0.8rem] font-semibold hover:bg-slate-100 transition"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="px-3 py-1.5 rounded-md bg-[#217346] hover:bg-[#185a37] text-white text-[0.8rem] font-bold transition disabled:opacity-50"
+                  >
+                    {isSaving ? "저장 중..." : "저장"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
