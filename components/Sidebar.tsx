@@ -52,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [location, setLocation] = useState("");
   const [loanedAt, setLoanedAt] = useState(getTodayString);
   const [expectedReturnDate, setExpectedReturnDate] = useState("");
+  const [isAnnual, setIsAnnual] = useState(false);
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -95,8 +96,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         borrower_name: borrower.trim() || undefined,
         issuer_name: issuer.trim(),
         quantity: qty,
-        loaned_at: loanedAt ? loanedAt.trim() : undefined,
-        expected_return_date: expectedReturnDate ? expectedReturnDate.trim() : undefined,
+        loaned_at: isAnnual ? "연간" : (loanedAt ? loanedAt.trim() : undefined),
+        expected_return_date: isAnnual ? "연간" : (expectedReturnDate ? expectedReturnDate.trim() : undefined),
         description: note.trim() || undefined,
       });
       // Reset fields
@@ -105,6 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       setQuantity("1");
       setLocation("");
       setExpectedReturnDate("");
+      setIsAnnual(false);
       setNote("");
     } catch (err) {
       console.error(err);
@@ -239,20 +241,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
 
-          {/* 대여 일자 & 반납 예정 일자 (예시 문구 제거) */}
+          {/* 대여 일자 & 반납 예정 일자 */}
           <div className="grid grid-cols-1 gap-2 pt-0.5">
             <div className="space-y-1">
               <label className="block text-[0.8rem] font-semibold text-[#333333]">
                 대여 일자
               </label>
-              <input
-                type="text"
-                maxLength={10}
-                value={loanedAt}
-                onChange={handleLoanedAtChange}
-                placeholder="YYYY-MM-DD"
-                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
-              />
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  maxLength={10}
+                  disabled={isAnnual}
+                  value={isAnnual ? "연간" : loanedAt}
+                  onChange={handleLoanedAtChange}
+                  placeholder="YYYY-MM-DD"
+                  className={`flex-1 min-w-0 px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono transition ${
+                    isAnnual
+                      ? "bg-[#f1f5f9] text-[#217346] font-bold text-center cursor-not-allowed"
+                      : "bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec]"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsAnnual((prev) => !prev)}
+                  className={`px-2.5 py-1.5 rounded-md text-[0.8rem] font-bold border transition shrink-0 cursor-pointer ${
+                    isAnnual
+                      ? "bg-[#217346] text-white border-[#217346] shadow-xs"
+                      : "bg-white text-[#334155] border-[#d1d1d1] hover:bg-[#e6f2ec] hover:text-[#217346] hover:border-[#217346]"
+                  }`}
+                >
+                  연간
+                </button>
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -262,10 +282,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <input
                 type="text"
                 maxLength={10}
-                value={expectedReturnDate}
+                disabled={isAnnual}
+                value={isAnnual ? "연간" : expectedReturnDate}
                 onChange={handleExpectedReturnDateChange}
                 placeholder="YYYY-MM-DD"
-                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+                className={`w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono transition ${
+                  isAnnual
+                    ? "bg-[#f1f5f9] text-[#217346] font-bold text-center cursor-not-allowed"
+                    : "bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec]"
+                }`}
               />
             </div>
           </div>

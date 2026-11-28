@@ -202,15 +202,29 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   {item.quantity ?? 1}
                 </td>
 
-                {/* 대여 일자 */}
-                <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem] text-[#333333]">
-                  {formatDate(item.loaned_at)}
-                </td>
+                {/* 대여 일자 & 반납 예정 일자 */}
+                {item.loaned_at === "연간" || item.expected_return_date === "연간" ? (
+                  <td
+                    colSpan={2}
+                    className="py-2 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap"
+                  >
+                    <span className="inline-flex items-center justify-center w-full py-1 px-4 rounded-md bg-[#e6f2ec] text-[#217346] border border-[#bbf7d0] text-[0.82rem] font-bold tracking-widest">
+                      연 간
+                    </span>
+                  </td>
+                ) : (
+                  <>
+                    {/* 대여 일자 */}
+                    <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem] text-[#333333]">
+                      {formatDate(item.loaned_at)}
+                    </td>
 
-                {/* 반납 예정 일자 (D-Day 뱃지 없이 날짜만 단정하게 표시) */}
-                <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem] text-[#c2410c] font-semibold">
-                  {formatDate(item.expected_return_date)}
-                </td>
+                    {/* 반납 예정 일자 (D-Day 뱃지 없이 날짜만 단정하게 표시) */}
+                    <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem] text-[#c2410c] font-semibold">
+                      {formatDate(item.expected_return_date)}
+                    </td>
+                  </>
+                )}
 
                 {/* 반납 일자 */}
                 <td className="py-2.5 px-3 border-r border-[#d1d1d1] text-center whitespace-nowrap font-mono text-[0.85rem] text-[#217346]">

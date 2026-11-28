@@ -31,18 +31,21 @@ export const EditModal: React.FC<EditModalProps> = ({
   const [quantity, setQuantity] = useState<number | string>(1);
   const [loanedAt, setLoanedAt] = useState("");
   const [expectedReturnDate, setExpectedReturnDate] = useState("");
+  const [isAnnual, setIsAnnual] = useState(false);
   const [returnedAt, setReturnedAt] = useState("");
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (item) {
+      const annual = item.loaned_at === "연간" || item.expected_return_date === "연간";
       setLocation(item.location || "");
       setBorrowerName(item.borrower_name || "");
       setIssuerName(item.issuer_name || "");
       setQuantity(item.quantity ?? 1);
-      setLoanedAt(item.loaned_at || "");
-      setExpectedReturnDate(item.expected_return_date || "");
+      setIsAnnual(annual);
+      setLoanedAt(annual ? "" : (item.loaned_at || ""));
+      setExpectedReturnDate(annual ? "" : (item.expected_return_date || ""));
       setReturnedAt(item.returned_at || "");
       setNote(item.description || "");
     }
@@ -70,8 +73,8 @@ export const EditModal: React.FC<EditModalProps> = ({
         borrower_name: borrowerName.trim() || null,
         issuer_name: issuerName.trim() || null,
         quantity: qty,
-        loaned_at: loanedAt.trim() || null,
-        expected_return_date: expectedReturnDate.trim() || null,
+        loaned_at: isAnnual ? "연간" : (loanedAt.trim() || null),
+        expected_return_date: isAnnual ? "연간" : (expectedReturnDate.trim() || null),
         returned_at: returnedAt.trim() || null,
         description: note.trim() || null,
         status: returnedAt.trim() ? "AVAILABLE" : (borrowerName.trim() ? "LOANED" : "AVAILABLE"),
@@ -168,14 +171,32 @@ export const EditModal: React.FC<EditModalProps> = ({
               <label className="block text-[0.8rem] font-semibold text-[#333333] mb-1">
                 대여 일자
               </label>
-              <input
-                type="text"
-                maxLength={10}
-                value={loanedAt}
-                onChange={(e) => setLoanedAt(formatDateInput(e.target.value))}
-                placeholder="YYYY-MM-DD"
-                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
-              />
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  maxLength={10}
+                  disabled={isAnnual}
+                  value={isAnnual ? "연간" : loanedAt}
+                  onChange={(e) => setLoanedAt(formatDateInput(e.target.value))}
+                  placeholder="YYYY-MM-DD"
+                  className={`flex-1 min-w-0 px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono transition ${
+                    isAnnual
+                      ? "bg-[#f1f5f9] text-[#217346] font-bold text-center cursor-not-allowed"
+                      : "bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec]"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsAnnual((prev) => !prev)}
+                  className={`px-2.5 py-1.5 rounded-md text-[0.8rem] font-bold border transition shrink-0 cursor-pointer ${
+                    isAnnual
+                      ? "bg-[#217346] text-white border-[#217346] shadow-xs"
+                      : "bg-white text-[#334155] border-[#d1d1d1] hover:bg-[#e6f2ec] hover:text-[#217346] hover:border-[#217346]"
+                  }`}
+                >
+                  연간
+                </button>
+              </div>
             </div>
 
             <div>
@@ -185,10 +206,15 @@ export const EditModal: React.FC<EditModalProps> = ({
               <input
                 type="text"
                 maxLength={10}
-                value={expectedReturnDate}
+                disabled={isAnnual}
+                value={isAnnual ? "연간" : expectedReturnDate}
                 onChange={(e) => setExpectedReturnDate(formatDateInput(e.target.value))}
                 placeholder="YYYY-MM-DD"
-                className="w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec] transition"
+                className={`w-full px-2.5 py-1.5 border border-[#d1d1d1] rounded-md text-[0.85rem] font-mono transition ${
+                  isAnnual
+                    ? "bg-[#f1f5f9] text-[#217346] font-bold text-center cursor-not-allowed"
+                    : "bg-white focus:outline-none focus:border-[#217346] focus:ring-2 focus:ring-[#e6f2ec]"
+                }`}
               />
             </div>
           </div>
