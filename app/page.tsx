@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Item, RentalLog, InventoryStats } from "@/types/inventory";
-import { InventoryService } from "@/lib/inventory-service";
-import { Header } from "@/components/Header";
+import { InventoryService, StockTotals, DEFAULT_STOCK_TOTALS } from "@/lib/inventory-service";
+import { Header, CategoryStockSummary } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { RosterTable, isDMinus1, SortKey, SortOrder } from "@/components/RosterTable";
 import { EditModal } from "@/components/EditModal";
@@ -11,9 +11,16 @@ import { AlertCircle } from "lucide-react";
 
 const CATEGORIES = ["전체", "A2 POP", "A3 POP", "철제배너"];
 
+const STOCK_CATEGORY_MAP: { key: keyof StockTotals; label: string }[] = [
+  { key: "A2 POP", label: "A2" },
+  { key: "A3 POP", label: "A3" },
+  { key: "철제배너", label: "철제배너" },
+];
+
 export default function HomePage() {
   const [items, setItems] = useState<Item[]>([]);
   const [logs, setLogs] = useState<RentalLog[]>([]);
+  const [stockTotals, setStockTotals] = useState<StockTotals>(DEFAULT_STOCK_TOTALS);
   const [loading, setLoading] = useState(true);
 
   // Filters & State
@@ -28,13 +35,15 @@ export default function HomePage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [fetchedItems, fetchedLogs] = await Promise.all([
+      const [fetchedItems, fetchedLogs, fetchedTotals] = await Promise.all([
         InventoryService.getItems(),
         InventoryService.getLogs(),
+        InventoryService.getStockTotals(),
       ]);
 
       setItems(fetchedItems);
       setLogs(fetchedLogs);
+      setStockTotals(fetchedTotals);
     } catch (err) {
       console.error("Failed to load inventory data:", err);
     } finally {
@@ -53,6 +62,23 @@ export default function HomePage() {
       unsubscribe();
     };
   }, [loadData]);
+
+  // Header stock summary: remaining / loaned per category (total is hidden, used only for calculation)
+  const stockSummaries: CategoryStockSummary[] = useMemo(() => {
+    return STOCK_CATEGORY_MAP.map(({ key, label }) => {
+      const loaned = items
+        .filter((i) => i.category === key && i.status === "LOANED" && !i.returned_at)
+        .reduce((sum, i) => sum + (i.quantity ?? 1), 0);
+      const total = stockTotals[key] ?? 0;
+      const remaining = total - loaned;
+      return {
+        key,
+        label,
+        remaining,
+        loaned,
+      };
+    });
+  }, [items, stockTotals]);
 
   // Statistics for current selected category
   const categoryStats: InventoryStats = useMemo(() => {
@@ -204,7 +230,18 @@ export default function HomePage() {
   return (
     <div className="app-container">
       {/* App Header (sp-blond style with live clock) */}
-      <Header />
+      <Header
+        stockSummaries={stockSummaries}
+        stockTotals={stockTotals}
+        onUpdateStockTotals={async (newTotals) => {
+          const ok = await InventoryService.updateStockTotals(newTotals);
+          if (ok) {
+            await loadData();
+          } else {
+            alert("총 수량 저장에 실패했습니다.");
+          }
+        }}
+      />
 
       {/* Main Content Area (Sidebar + Spreadsheet) */}
       <div className="flex flex-1 overflow-hidden">

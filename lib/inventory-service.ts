@@ -2,6 +2,18 @@ import { Item, RentalLog } from "@/types/inventory";
 import { db, ref, get, set, update, push, onValue, off } from "./firebase";
 import { INITIAL_ITEMS, INITIAL_LOGS } from "./seed-data";
 
+export interface StockTotals {
+  "A2 POP": number;
+  "A3 POP": number;
+  "철제배너": number;
+}
+
+export const DEFAULT_STOCK_TOTALS: StockTotals = {
+  "A2 POP": 14,
+  "A3 POP": 11,
+  "철제배너": 13,
+};
+
 export const InventoryService = {
   isCloudSync(): boolean {
     return true; // Now always true because we use Firebase
@@ -33,6 +45,29 @@ export const InventoryService = {
       console.error("Firebase fetch logs error:", e);
     }
     return INITIAL_LOGS;
+  },
+
+  async getStockTotals(): Promise<StockTotals> {
+    try {
+      const snapshot = await get(ref(db, "stock_totals"));
+      if (snapshot.exists()) {
+        return { ...DEFAULT_STOCK_TOTALS, ...snapshot.val() };
+      }
+    } catch (e) {
+      console.error("Firebase fetch stock_totals error:", e);
+    }
+    return { ...DEFAULT_STOCK_TOTALS };
+  },
+
+  async updateStockTotals(totals: StockTotals): Promise<boolean> {
+    try {
+      await set(ref(db, "stock_totals"), totals);
+      await this.triggerUpdate();
+      return true;
+    } catch (e) {
+      console.error("Firebase update stock_totals error:", e);
+      return false;
+    }
   },
 
   async triggerUpdate() {
